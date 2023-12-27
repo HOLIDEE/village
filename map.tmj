@@ -1734,7 +1734,7 @@
                         {
                          "name":"playAudio",
                          "type":"string",
-                         "value":"\/fire.mp3"
+                         "value":"https:\/\/meta.holidee.fr\/map-storage\/village\/audio\/fire.mp3"
                         }],
                  "rotation":0,
                  "type":"area",
@@ -1761,7 +1761,7 @@
                         {
                          "name":"playAudio",
                          "type":"string",
-                         "value":"\/fountain.mp3"
+                         "value":"https:\/\/meta.holidee.fr\/map-storage\/village\/audio\/fountain.mp3"
                         }],
                  "rotation":0,
                  "type":"area",
@@ -1788,7 +1788,7 @@
                         {
                          "name":"playAudio",
                          "type":"string",
-                         "value":"\/fire.mp3"
+                         "value":"https:\/\/meta.holidee.fr\/map-storage\/village\/audio\/fire.mp3"
                         }],
                  "rotation":0,
                  "type":"area",
@@ -1881,7 +1881,7 @@
                         {
                          "name":"playAudio",
                          "type":"string",
-                         "value":"\/fountain.mp3"
+                         "value":"https:\/\/meta.holidee.fr\/map-storage\/village\/audio\/fountain.mp3"
                         }],
                  "rotation":0,
                  "type":"area",
@@ -1908,7 +1908,7 @@
                         {
                          "name":"playAudio",
                          "type":"string",
-                         "value":"\/fire.mp3"
+                         "value":"https:\/\/meta.holidee.fr\/map-storage\/village\/audio\/fire.mp3"
                         }],
                  "rotation":0,
                  "type":"area",
@@ -1935,7 +1935,7 @@
                         {
                          "name":"playAudio",
                          "type":"string",
-                         "value":"\/fountain.mp3"
+                         "value":"https:\/\/meta.holidee.fr\/map-storage\/village\/audio\/fountain.mp3"
                         }],
                  "rotation":0,
                  "type":"area",
@@ -1962,7 +1962,7 @@
                         {
                          "name":"playAudio",
                          "type":"string",
-                         "value":"\/fountain.mp3"
+                         "value":"https:\/\/meta.holidee.fr\/map-storage\/village\/audio\/fountain.mp3"
                         }],
                  "rotation":0,
                  "type":"area",
