@@ -45,7 +45,8 @@ WA.onInit().then(() => {
         id: 'map-btn',
         // @ts-ignore
         type: 'action',
-        imageSrc: 'https://hugoaverty.github.io/map-overview/img/map.svg',
+        //imageSrc: 'https://hugoaverty.github.io/map-overview/img/map.svg',
+	imageSrc: 'https://holidee.github.io/village/map-button.png',
         toolTip: 'Map overview',
         callback: () => {
             if(isDoorOpen){
@@ -127,7 +128,7 @@ const openMapOverview = async() => {
         // TODO fix map overview projet
         //src: "https://hugoaverty.github.io/map-overview/index.html?x="+pos.x+"&y="+pos.y+"",
         //src: "https://workadventure.github.io/map-overview/img/ground-light.webp?x="+pos.x+"&y="+pos.y,
-	src: "../map.png",
+	src: "https://holidee.github.io/village/map.png",
         allow: "fullscreen",
         title: "Map Overview",
         allowApi: true,
