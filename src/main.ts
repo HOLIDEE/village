@@ -126,7 +126,8 @@ const openMapOverview = async() => {
     WA.ui.modal.openModal({
         // TODO fix map overview projet
         //src: "https://hugoaverty.github.io/map-overview/index.html?x="+pos.x+"&y="+pos.y+"",
-        src: "https://workadventure.github.io/map-overview/img/ground-light.webp?x="+pos.x+"&y="+pos.y,
+        //src: "https://workadventure.github.io/map-overview/img/ground-light.webp?x="+pos.x+"&y="+pos.y,
+	src: "../map.png",
         allow: "fullscreen",
         title: "Map Overview",
         allowApi: true,
