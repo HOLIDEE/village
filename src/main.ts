@@ -123,7 +123,7 @@ WA.onInit().then(() => {
 
 const openMapOverview = async() => {
     WA.ui.modal.closeModal();
-    const pos = await WA.player.getPosition();
+    //const pos = await WA.player.getPosition();
     WA.ui.modal.openModal({
         // TODO fix map overview projet
         //src: "https://hugoaverty.github.io/map-overview/index.html?x="+pos.x+"&y="+pos.y+"",
