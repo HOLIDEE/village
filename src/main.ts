@@ -13,7 +13,7 @@ import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
 let popupPrivateOffice: Popup|null;
 let mapOverviewAction: any;
-let isDoorOpen = false;
+//let isDoorOpen = false;
 
 (async () => {
     await WA.onInit();
