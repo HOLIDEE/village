@@ -41,23 +41,23 @@ WA.onInit().then(() => {
         WA.ui.modal.closeModal();
     });
 
-    WA.ui.actionBar.addButton({
-        id: 'map-btn',
+//    WA.ui.actionBar.addButton({
+//        id: 'map-btn',
         // @ts-ignore
-        type: 'action',
+//        type: 'action',
         //imageSrc: 'https://hugoaverty.github.io/map-overview/img/map.svg',
-	imageSrc: 'https://holidee.github.io/village/map-button.png',
-        toolTip: 'Map overview',
-        callback: () => {
-            if(isDoorOpen){
-                WA.ui.modal.closeModal();
-                isDoorOpen = false;
-                return;
-            }
-            openMapOverview();
-            isDoorOpen = true;
-        }
-    });
+//	imageSrc: 'https://holidee.github.io/village/map-button.png',
+//        toolTip: 'Map overview',
+//        callback: () => {
+//            if(isDoorOpen){
+//                WA.ui.modal.closeModal();
+//                isDoorOpen = false;
+//                return;
+//            }
+//            openMapOverview();
+//            isDoorOpen = true;
+//        }
+//    });
 
     // Open & Close popupPrivateOffice
     WA.room.area.onEnter("popupPrivateOffice_area").subscribe(() => {
@@ -121,20 +121,20 @@ WA.onInit().then(() => {
 
 }).catch(e => console.error(e));
 
-const openMapOverview = async() => {
-    WA.ui.modal.closeModal();
+//const openMapOverview = async() => {
+  //  WA.ui.modal.closeModal();
     //const pos = await WA.player.getPosition();
-    WA.ui.modal.openModal({
+    //WA.ui.modal.openModal({
         // TODO fix map overview projet
         //src: "https://hugoaverty.github.io/map-overview/index.html?x="+pos.x+"&y="+pos.y+"",
         //src: "https://workadventure.github.io/map-overview/img/ground-light.webp?x="+pos.x+"&y="+pos.y,
-	src: "https://holidee.github.io/village/map.png",
-        allow: "fullscreen",
-        title: "Map Overview",
-        allowApi: true,
-        position: "center",
-    });
-}
+	//src: "https://holidee.github.io/village/map.png",
+        //allow: "fullscreen",
+        //title: "Map Overview",
+        //allowApi: true,
+        //position: "center",
+    //});
+//}
 
 /* uncomment after scavenger
 const openTutorial = () => {
