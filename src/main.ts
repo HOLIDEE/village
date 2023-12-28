@@ -121,20 +121,20 @@ WA.onInit().then(() => {
 
 }).catch(e => console.error(e));
 
-//const openMapOverview = async() => {
-  //  WA.ui.modal.closeModal();
-    //const pos = await WA.player.getPosition();
-    //WA.ui.modal.openModal({
+const openMapOverview = async() => {
+  WA.ui.modal.closeModal();
+    const pos = await WA.player.getPosition();
+    WA.ui.modal.openModal({
         // TODO fix map overview projet
         //src: "https://hugoaverty.github.io/map-overview/index.html?x="+pos.x+"&y="+pos.y+"",
-        //src: "https://workadventure.github.io/map-overview/img/ground-light.webp?x="+pos.x+"&y="+pos.y,
+        src: "https://workadventure.github.io/map-overview/img/ground-light.webp?x="+pos.x+"&y="+pos.y,
 	//src: "https://holidee.github.io/village/map.png",
-        //allow: "fullscreen",
-        //title: "Map Overview",
-        //allowApi: true,
-        //position: "center",
-    //});
-//}
+        allow: "fullscreen",
+        title: "Map Overview",
+        allowApi: true,
+        position: "center",
+    });
+}
 
 /* uncomment after scavenger
 const openTutorial = () => {
