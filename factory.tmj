@@ -1937,28 +1937,6 @@
                 }, 
                 {
                  "height":94.9619,
-                 "id":950,
-                 "name":"chess3",
-                 "properties":[
-                        {
-                         "name":"openWebsite",
-                         "type":"string",
-                         "value":"https:\/\/www.crazygames.com\/embed\/master-chess"
-                        }, 
-                        {
-                         "name":"openWebsiteTrigger",
-                         "type":"string",
-                         "value":"onicon"
-                        }],
-                 "rotation":0,
-                 "type":"area",
-                 "visible":true,
-                 "width":189.924,
-                 "x":5055.33540675698,
-                 "y":1856.15906121425
-                }, 
-                {
-                 "height":94.9619,
                  "id":951,
                  "name":"chess2",
                  "properties":[
