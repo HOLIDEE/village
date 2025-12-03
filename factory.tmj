@@ -2740,12 +2740,12 @@
                 {
                  "height":65.272727272727,
                  "id":1098,
-                 "name":"to-romanee",
+                 "name":"to-vendee",
                  "properties":[
                         {
                          "name":"exitUrl",
                          "type":"string",
-                         "value":"https:\/\/meta.holidee.fr\/@\/HOLIDEE\/romanee\/casting"
+                         "value":"https:\/\/meta.holidee.fr\/@\/HOLIDEE\/vendee\/casting"
                         }],
                  "rotation":0,
                  "type":"area",
