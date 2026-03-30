@@ -90,7 +90,8 @@ function updatePublicScore(count: number) {
 // INITIALISATION PRINCIPALE
 // =============================================
 WA.onInit().then(() => {
-    console.info("Easter: WA.onInit OK");
+    const mapUrl = WA.room.mapURL;
+    console.info("Easter: WA.onInit OK, map =", mapUrl);
 
     // ÉTAPE 1 : Cacher les œufs IMMÉDIATEMENT (le layer est visible:true dans Tiled)
     try {
@@ -100,7 +101,6 @@ WA.onInit().then(() => {
         console.warn("Easter: hideLayer failed", e);
     }
 
-    const mapUrl = WA.room.mapURL;
     const root = mapUrl.substring(0, mapUrl.lastIndexOf("/"));
     console.info("Easter: root =", root);
 
