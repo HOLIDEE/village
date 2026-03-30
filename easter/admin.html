@@ -41,12 +41,7 @@
         .btn-resetall {
             background: linear-gradient(135deg, #b71c1c, #880e0e);
         }
-        .btn-show {
-            background: linear-gradient(135deg, #1e88e5, #1565c0);
-        }
-        .btn-hide {
-            background: linear-gradient(135deg, #8e24aa, #6a1b9a);
-        }
+
         .btn-close {
             background: linear-gradient(135deg, #546e7a, #37474f);
             margin-top: 8px;
@@ -162,8 +157,6 @@
         <h3 class="section-title">🔧 Outils</h3>
         <div class="admin-actions">
             <button class="admin-btn btn-reset" id="btnReset">🗑️ Réinitialiser MA progression</button>
-            <button class="admin-btn btn-show" id="btnShowEggs">👁️ Afficher les œufs (debug)</button>
-            <button class="admin-btn btn-hide" id="btnHideEggs">🙈 Cacher les œufs (debug)</button>
         </div>
 
         <h3 class="section-title">⚠️ Zone dangereuse</h3>
@@ -319,16 +312,6 @@
         });
         document.getElementById('btnConfirmResetNo').addEventListener('click', function() {
             document.getElementById('confirmReset').style.display = 'none';
-        });
-
-        // Afficher/cacher les œufs (debug)
-        document.getElementById('btnShowEggs').addEventListener('click', function() {
-            WA.room.showLayer('EasterEggs');
-            showMessage('\u{1F441}\uFE0F \u0152ufs visibles.', 'rgba(67, 160, 71, 0.3)');
-        });
-        document.getElementById('btnHideEggs').addEventListener('click', function() {
-            WA.room.hideLayer('EasterEggs');
-            showMessage('\u{1F648} \u0152ufs cach\u00e9s.', 'rgba(245, 124, 0, 0.3)');
         });
 
         // Vider le classement
