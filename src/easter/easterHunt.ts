@@ -190,6 +190,7 @@ WA.onInit().then(() => {
             if (value === false) {
                 huntPaused = true;
                 console.info("Easter: hunt DISABLED by admin (live)");
+                WA.room.hideLayer(EGGS_LAYER);
                 WA.ui.banner.openBanner({
                     id: "easter-banner",
                     text: "⛔ La chasse aux œufs a été désactivée par un administrateur.",
@@ -201,6 +202,12 @@ WA.onInit().then(() => {
             } else {
                 huntPaused = false;
                 console.info("Easter: hunt ENABLED by admin (live)");
+                // Ré-afficher les œufs pour les joueurs en cours de chasse
+                if (huntStarted || WA.player.state.easterCompleted === true) {
+                    WA.room.showLayer(EGGS_LAYER);
+                    const p = (WA.player.state.easterProgress as EasterProgress) ?? buildDefaultProgress();
+                    hideFoundEggs(p);
+                }
                 WA.ui.banner.openBanner({
                     id: "easter-banner",
                     text: "✅ La chasse aux œufs est de nouveau active ! 🐰",
@@ -223,8 +230,10 @@ WA.onInit().then(() => {
 
     if (isCompleted) {
         console.info("Easter: already completed");
-        WA.room.showLayer(EGGS_LAYER);
-        hideFoundEggs(progress);
+        if (!huntPaused) {
+            WA.room.showLayer(EGGS_LAYER);
+            hideFoundEggs(progress);
+        }
         WA.ui.banner.openBanner({
             id: "easter-banner",
             text: `🎉 Chasse terminée ! Tu as trouvé ${count}/${TOTAL_EGGS} œufs !`,
@@ -243,8 +252,10 @@ WA.onInit().then(() => {
     if (wasStarted) {
         console.info("Easter: resuming hunt");
         huntStarted = true;
-        WA.room.showLayer(EGGS_LAYER);
-        hideFoundEggs(progress);
+        if (!huntPaused) {
+            WA.room.showLayer(EGGS_LAYER);
+            hideFoundEggs(progress);
+        }
         WA.ui.banner.openBanner({
             id: "easter-banner",
             text: `🥚 Chasse en cours : ${count}/${TOTAL_EGGS} œufs trouvés`,
