@@ -1,6 +1,6 @@
 /// <reference types="@workadventure/iframe-api-typings" />
 
-const TOTAL_EGGS = 10;
+const TOTAL_EGGS = 4;
 
 WA.onInit().then(() => {
     const progress = WA.player.state.easterProgress as Record<string, boolean> | undefined;
