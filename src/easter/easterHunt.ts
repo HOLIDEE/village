@@ -61,8 +61,12 @@ let eggSound: any;
 let victorySound: any;
 
 function loadSounds(root: string) {
-    eggSound = WA.sound.loadSound(`${root}/easter/sounds/egg-found.wav`);
-    victorySound = WA.sound.loadSound(`${root}/easter/sounds/victory.wav`);
+    try {
+        eggSound = WA.sound.loadSound(`${root}/easter/sounds/egg-found.wav`);
+        victorySound = WA.sound.loadSound(`${root}/easter/sounds/victory.wav`);
+    } catch (_e) {
+        console.warn("Easter: impossible de charger les sons");
+    }
 }
 
 function playEggSound() {
@@ -279,8 +283,10 @@ function showProgress(_progress: EasterProgress, root: string) {
 }
 
 function setupLeaderboard(root: string) {
+    console.info("Easter: leaderboard setup started");
     // Ouvrir le leaderboard quand le joueur entre dans la zone "leaderboard"
     WA.room.area.onEnter("leaderboard").subscribe(() => {
+        console.info("Easter: player entered leaderboard zone");
         WA.ui.modal.openModal({
             title: "Classement",
             src: `${root}/easter/leaderboard.html`,
