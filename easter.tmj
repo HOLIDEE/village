@@ -5842,6 +5842,13 @@
          "name":"script",
          "type":"string",
          "value":"src\/easter.ts"
+        }, 
+        {
+         "name":"easterLeaderboard",
+         "type":"string",
+         "value":"{}",
+         "propertytype":"",
+         "class":""
         }],
  "renderorder":"right-down",
  "tiledversion":"1.12.1",

@@ -86,6 +86,20 @@ function updatePublicScore(count: number) {
     try { WA.player.state.easterScore = count; } catch (_e) { /* ignore */ }
 }
 
+// Met à jour le classement partagé (persisté dans WA.state, visible par tous)
+function updateSharedLeaderboard(playerName: string, score: number) {
+    try {
+        const raw = WA.state.easterLeaderboard as string;
+        let lb: { [name: string]: { score: number; date: string } } = {};
+        try { lb = JSON.parse(raw || "{}"); } catch (_e) { lb = {}; }
+        lb[playerName] = { score, date: new Date().toISOString() };
+        WA.state.easterLeaderboard = JSON.stringify(lb);
+        console.info("Easter: leaderboard updated for", playerName, "=>", score);
+    } catch (e) {
+        console.warn("Easter: leaderboard update failed", e);
+    }
+}
+
 // =============================================
 // INITIALISATION PRINCIPALE
 // =============================================
@@ -127,10 +141,15 @@ WA.onInit().then(() => {
         wasStarted = WA.player.state.easterHuntStarted === true;
     } catch (_e) { /* ignore */ }
 
+    // Récupérer le nom du joueur pour le leaderboard
+    let playerName = "Joueur";
+    try { playerName = WA.player.name || "Joueur"; } catch (_e) { /* */ }
+
     if (isCompleted) {
         console.info("Easter: already completed");
         WA.room.showLayer(EGGS_LAYER);
         hideFoundEggs(progress);
+        updateSharedLeaderboard(playerName, count);
         WA.ui.banner.openBanner({
             id: "easter-banner",
             text: `🎉 Chasse terminée ! Tu as trouvé ${count}/${TOTAL_EGGS} œufs !`,
@@ -149,6 +168,7 @@ WA.onInit().then(() => {
         huntStarted = true;
         WA.room.showLayer(EGGS_LAYER);
         hideFoundEggs(progress);
+        updateSharedLeaderboard(playerName, count);
         WA.ui.banner.openBanner({
             id: "easter-banner",
             text: `🥚 Chasse en cours : ${count}/${TOTAL_EGGS} œufs trouvés`,
@@ -237,6 +257,9 @@ function startHunt(progress: EasterProgress, root: string) {
 }
 
 function setupEggListeners(progress: EasterProgress, root: string) {
+    let pName = "Joueur";
+    try { pName = WA.player.name || "Joueur"; } catch (_e) { /* */ }
+
     for (const areaName of easterEggAreas) {
         if (progress[areaName]) continue;
 
@@ -255,6 +278,7 @@ function setupEggListeners(progress: EasterProgress, root: string) {
 
             const count = getFoundCount(currentProgress);
             updatePublicScore(count);
+            updateSharedLeaderboard(pName, count);
 
             WA.ui.banner.openBanner({
                 id: "easter-found",
@@ -349,9 +373,9 @@ function setupAdminButton(root: string, _progress: EasterProgress) {
     try {
         const tags = WA.player.tags;
         console.info("Easter: player tags =", JSON.stringify(tags));
-        const isAdmin = tags.some((t: string) => t.toLowerCase() === "admin");
+        const isAdmin = tags.some((t: string) => t.toLowerCase() === "admin" || t.toLowerCase() === "team");
         if (!isAdmin) {
-            console.info("Easter: not admin, skipping admin button");
+            console.info("Easter: not admin/team, skipping admin button");
             return;
         }
         console.info("Easter: admin detected, adding admin button");

@@ -112,12 +112,14 @@
             <p>Chasse démarrée : <span class="status-value" id="statusStarted">...</span></p>
             <p>Chasse terminée : <span class="status-value" id="statusCompleted">...</span></p>
             <p>Œufs trouvés : <span class="status-value" id="statusEggs">...</span></p>
+            <p>Classement : <span class="status-value" id="statusLb">...</span></p>
         </div>
 
         <div class="admin-actions">
             <button class="admin-btn btn-reset" id="btnReset">🗑️ Réinitialiser ma progression</button>
             <button class="admin-btn btn-show" id="btnShowEggs">👁️ Afficher les œufs</button>
             <button class="admin-btn btn-hide" id="btnHideEggs">🙈 Cacher les œufs</button>
+            <button class="admin-btn btn-reset" id="btnResetLeaderboard" style="background: linear-gradient(135deg, #d32f2f, #b71c1c);">📉 Vider le classement</button>
         </div>
 
         <div id="confirmZone">
@@ -125,6 +127,14 @@
             <div class="confirm-buttons">
                 <button class="btn-confirm-yes" id="btnConfirmYes">Oui, réinitialiser</button>
                 <button class="btn-confirm-no" id="btnConfirmNo">Annuler</button>
+            </div>
+        </div>
+
+        <div id="confirmLeaderboard" style="display:none; background: rgba(211, 47, 47, 0.15); border: 2px solid #d32f2f; border-radius: 12px; padding: 16px; margin: 12px 0; text-align: center;">
+            <p>⚠️ Vider le classement pour TOUS les joueurs ?</p>
+            <div class="confirm-buttons">
+                <button class="btn-confirm-yes" id="btnConfirmLbYes">Oui, vider</button>
+                <button class="btn-confirm-no" id="btnConfirmLbNo">Annuler</button>
             </div>
         </div>
 
@@ -142,9 +152,17 @@
             var progress = WA.player.state.easterProgress || {};
             var count = Object.values(progress).filter(Boolean).length;
 
-            document.getElementById('statusStarted').textContent = started ? 'Oui ✅' : 'Non ❌';
-            document.getElementById('statusCompleted').textContent = completed ? 'Oui ✅' : 'Non ❌';
+            // Compter les joueurs dans le classement
+            var lbCount = 0;
+            try {
+                var lb = JSON.parse(WA.state.easterLeaderboard || '{}');
+                lbCount = Object.keys(lb).length;
+            } catch(e) {}
+
+            document.getElementById('statusStarted').textContent = started ? 'Oui \u2705' : 'Non \u274C';
+            document.getElementById('statusCompleted').textContent = completed ? 'Oui \u2705' : 'Non \u274C';
             document.getElementById('statusEggs').textContent = count + ' / 4';
+            document.getElementById('statusLb').textContent = lbCount + ' joueur(s)';
         });
 
         function showMessage(text, color) {
@@ -191,6 +209,20 @@
         // Fermer
         document.getElementById('btnClose').addEventListener('click', function() {
             WA.ui.modal.closeModal();
+        });
+
+        // Vider le classement
+        document.getElementById('btnResetLeaderboard').addEventListener('click', function() {
+            document.getElementById('confirmLeaderboard').style.display = 'block';
+        });
+        document.getElementById('btnConfirmLbYes').addEventListener('click', function() {
+            document.getElementById('confirmLeaderboard').style.display = 'none';
+            WA.state.easterLeaderboard = '{}';
+            showMessage('\u2705 Classement vid\u00e9 !', 'rgba(76, 175, 80, 0.3)');
+            document.getElementById('statusLb').textContent = '0 joueur(s)';
+        });
+        document.getElementById('btnConfirmLbNo').addEventListener('click', function() {
+            document.getElementById('confirmLeaderboard').style.display = 'none';
         });
     </script>
 </body>
