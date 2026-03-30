@@ -14,17 +14,9 @@
             overflow: hidden;
         }
 
-        /* Tentative iframe (si Microsoft l'autorise) */
-        #teamsFrame {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-        }
-
-        /* Fallback si iframe bloquée */
+        /* Panneau de lancement */
         #fallback {
-            display: none;
+            display: flex;
             height: 100%;
             flex-direction: column;
             align-items: center;
@@ -125,14 +117,11 @@
     </style>
 </head>
 <body>
-    <!-- Tentative 1: iframe directe -->
-    <iframe id="teamsFrame" src="https://teams.cloud.microsoft/"></iframe>
-
-    <!-- Fallback: panneau de lancement -->
+    <!-- Panneau de lancement Teams -->
     <div id="fallback">
         <div class="teams-logo">💬</div>
         <h1>Microsoft Teams</h1>
-        <p class="subtitle">Teams ne peut pas s'afficher directement ici. Ouvre-le dans une fenêtre dédiée — elle restera à côté de WorkAdventure.</p>
+        <p class="subtitle">Clique pour ouvrir Teams dans une fenêtre dédiée — elle restera à côté de WorkAdventure.</p>
 
         <button class="btn-teams" id="btnOpenPopup">
             💬 Ouvrir Teams
@@ -186,45 +175,6 @@
             if (popupRef) {
                 popupRef.focus();
             }
-        }
-
-        // Détection iframe bloquée
-        var frame = document.getElementById('teamsFrame');
-        var fallback = document.getElementById('fallback');
-        var iframeLoaded = false;
-
-        // Méthode 1 : si l'iframe charge, on la garde
-        frame.addEventListener('load', function() {
-            // Vérifier si on peut accéder au contenu (même domaine) — si non, c'est bloqué
-            try {
-                // Tenter d'accéder — si cross-origin ET bloqué, ça donnera un about:blank
-                var loc = frame.contentWindow.location.href;
-                if (loc === 'about:blank') {
-                    showFallback();
-                } else {
-                    iframeLoaded = true;
-                }
-            } catch(e) {
-                // Cross-origin = probablement chargé correctement (pas bloqué)
-                iframeLoaded = true;
-            }
-        });
-
-        // Méthode 2 : timeout — si rien ne charge en 4s, montrer le fallback
-        setTimeout(function() {
-            if (!iframeLoaded) {
-                showFallback();
-            }
-        }, 4000);
-
-        // Écouter les erreurs CSP
-        frame.addEventListener('error', function() {
-            showFallback();
-        });
-
-        function showFallback() {
-            frame.style.display = 'none';
-            fallback.style.display = 'flex';
         }
 
         // Boutons
