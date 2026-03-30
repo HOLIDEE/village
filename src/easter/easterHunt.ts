@@ -86,7 +86,7 @@ function updatePublicScore(count: number) {
     try { WA.player.state.easterScore = count; } catch (_e) { /* ignore */ }
 }
 
-// Met à jour le classement partagé (persisté dans WA.state, visible par tous)
+// Met à jour le classement partagé (persisté dans WA.state, copié dans WA.player.state pour les iframes)
 async function updateSharedLeaderboard(playerName: string, score: number) {
     try {
         let raw = "{}";
@@ -96,9 +96,22 @@ async function updateSharedLeaderboard(playerName: string, score: number) {
         lb[playerName] = { score, date: new Date().toISOString() };
         const newVal = JSON.stringify(lb);
         await WA.state.saveVariable("easterLeaderboard", newVal);
-        console.info("Easter: leaderboard saved for", playerName, "=>", score, "data:", newVal);
+        // Copier dans le state joueur pour que les iframes modaux puissent le lire
+        WA.player.state.leaderboardCache = newVal;
+        console.info("Easter: leaderboard saved", newVal);
     } catch (e) {
         console.error("Easter: leaderboard save FAILED", e);
+    }
+}
+
+// Rafraîchit le cache leaderboard dans player.state (pour que l'iframe puisse le lire)
+async function refreshLeaderboardCache() {
+    try {
+        const raw = (await WA.state.loadVariable("easterLeaderboard")) as string ?? "{}";
+        WA.player.state.leaderboardCache = raw;
+        console.info("Easter: leaderboard cache refreshed", raw);
+    } catch (e) {
+        console.warn("Easter: leaderboard cache refresh failed", e);
     }
 }
 
@@ -350,8 +363,10 @@ function showProgress(_progress: EasterProgress, root: string) {
 
 function setupLeaderboard(root: string) {
     try {
-        WA.room.area.onEnter("leaderboard").subscribe(() => {
+        WA.room.area.onEnter("leaderboard").subscribe(async () => {
             console.info("Easter: entered leaderboard zone");
+            // Rafraîchir le cache avant d'ouvrir le modal
+            await refreshLeaderboardCache();
             WA.ui.modal.openModal({
                 title: "Classement",
                 src: `${root}/easter/leaderboard.html`,

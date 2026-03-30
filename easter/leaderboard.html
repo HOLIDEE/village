@@ -125,10 +125,12 @@
         }
 
         function loadFromSharedState() {
-            WA.state.loadVariable('easterLeaderboard').then(function(raw) {
+            try {
+                // Lire depuis le cache joueur (mis à jour par le script principal)
+                var raw = WA.player.state.leaderboardCache || '{}';
                 console.info('Leaderboard raw:', raw);
                 var lb = {};
-                try { lb = JSON.parse(raw || '{}'); } catch(e) { lb = {}; }
+                try { lb = JSON.parse(raw); } catch(e) { lb = {}; }
                 var entries = [];
                 for (var name in lb) {
                     if (lb.hasOwnProperty(name)) {
@@ -136,11 +138,11 @@
                     }
                 }
                 renderLeaderboard(entries);
-            }).catch(function(e) {
-                console.error('Leaderboard: loadVariable failed', e);
+            } catch(e) {
+                console.error('Leaderboard: error', e);
                 document.getElementById('leaderboard').innerHTML =
                     '<li class="empty-state">Impossible de charger le classement \u{1F615}</li>';
-            });
+            }
         }
 
         WA.onInit().then(function() {
