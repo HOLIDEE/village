@@ -348,8 +348,12 @@ function setupLeaderboard(root: string) {
 function setupAdminButton(root: string, _progress: EasterProgress) {
     try {
         const tags = WA.player.tags;
-        if (!tags.includes("admin")) return;
-
+        console.info("Easter: player tags =", JSON.stringify(tags));
+        const isAdmin = tags.some((t: string) => t.toLowerCase() === "admin");
+        if (!isAdmin) {
+            console.info("Easter: not admin, skipping admin button");
+            return;
+        }
         console.info("Easter: admin detected, adding admin button");
         WA.ui.actionBar.addButton({
             id: "easter-admin-btn",
