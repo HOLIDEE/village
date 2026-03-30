@@ -87,16 +87,18 @@ function updatePublicScore(count: number) {
 }
 
 // Met à jour le classement partagé (persisté dans WA.state, visible par tous)
-function updateSharedLeaderboard(playerName: string, score: number) {
+async function updateSharedLeaderboard(playerName: string, score: number) {
     try {
-        const raw = WA.state.easterLeaderboard as string;
+        let raw = "{}";
+        try { raw = (await WA.state.loadVariable("easterLeaderboard")) as string ?? "{}"; } catch (_e) { /* */ }
         let lb: { [name: string]: { score: number; date: string } } = {};
         try { lb = JSON.parse(raw || "{}"); } catch (_e) { lb = {}; }
         lb[playerName] = { score, date: new Date().toISOString() };
-        WA.state.easterLeaderboard = JSON.stringify(lb);
-        console.info("Easter: leaderboard updated for", playerName, "=>", score);
+        const newVal = JSON.stringify(lb);
+        await WA.state.saveVariable("easterLeaderboard", newVal);
+        console.info("Easter: leaderboard saved for", playerName, "=>", score, "data:", newVal);
     } catch (e) {
-        console.warn("Easter: leaderboard update failed", e);
+        console.error("Easter: leaderboard save FAILED", e);
     }
 }
 
