@@ -156,8 +156,11 @@
             // Compter les joueurs dans le classement
             var lbCount = 0;
             try {
-                var lb = JSON.parse(WA.state.easterLeaderboard || '{}');
-                lbCount = Object.keys(lb).length;
+                WA.state.loadVariable('easterLeaderboard').then(function(raw) {
+                    var lb = JSON.parse(raw || '{}');
+                    lbCount = Object.keys(lb).length;
+                    document.getElementById('statusLb').textContent = lbCount + ' joueur(s)';
+                });
             } catch(e) {}
 
             document.getElementById('statusStarted').textContent = started ? 'Oui \u2705' : 'Non \u274C';
@@ -218,9 +221,10 @@
         });
         document.getElementById('btnConfirmLbYes').addEventListener('click', function() {
             document.getElementById('confirmLeaderboard').style.display = 'none';
-            WA.state.easterLeaderboard = '{}';
-            showMessage('\u2705 Classement vid\u00e9 !', 'rgba(76, 175, 80, 0.3)');
-            document.getElementById('statusLb').textContent = '0 joueur(s)';
+            WA.state.saveVariable('easterLeaderboard', '{}').then(function() {
+                showMessage('\u2705 Classement vid\u00e9 !', 'rgba(76, 175, 80, 0.3)');
+                document.getElementById('statusLb').textContent = '0 joueur(s)';
+            });
         });
         document.getElementById('btnConfirmLbNo').addEventListener('click', function() {
             document.getElementById('confirmLeaderboard').style.display = 'none';

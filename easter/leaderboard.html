@@ -126,9 +126,10 @@
         }
 
         function loadFromSharedState() {
-            try {
-                var raw = WA.state.easterLeaderboard;
-                var lb = JSON.parse(raw || '{}');
+            WA.state.loadVariable('easterLeaderboard').then(function(raw) {
+                console.info('Leaderboard raw:', raw);
+                var lb = {};
+                try { lb = JSON.parse(raw || '{}'); } catch(e) { lb = {}; }
                 var entries = [];
                 for (var name in lb) {
                     if (lb.hasOwnProperty(name)) {
@@ -136,11 +137,11 @@
                     }
                 }
                 renderLeaderboard(entries);
-            } catch (e) {
-                console.error('Leaderboard: error', e);
+            }).catch(function(e) {
+                console.error('Leaderboard: loadVariable failed', e);
                 document.getElementById('leaderboard').innerHTML =
                     '<li class="empty-state">Impossible de charger le classement \u{1F615}</li>';
-            }
+            });
         }
 
         WA.onInit().then(function() {
