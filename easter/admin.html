@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Chasse aux Œufs</title>
+    <link rel="stylesheet" href="css.css" />
+    <style>
+        .admin-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .admin-btn {
+            display: block;
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #fff;
+            text-align: center;
+        }
+        .admin-btn:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+        .btn-reset {
+            background: linear-gradient(135deg, #e53935, #c62828);
+        }
+        .btn-show {
+            background: linear-gradient(135deg, #43a047, #2e7d32);
+        }
+        .btn-hide {
+            background: linear-gradient(135deg, #f57c00, #e65100);
+        }
+        .btn-close {
+            background: linear-gradient(135deg, #546e7a, #37474f);
+            margin-top: 8px;
+        }
+        .status-box {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+        .status-box p {
+            margin: 6px 0;
+            font-size: 0.9rem;
+        }
+        .status-value {
+            color: #ffd54f;
+            font-weight: bold;
+        }
+        #confirmZone {
+            display: none;
+            background: rgba(229, 57, 53, 0.15);
+            border: 2px solid #e53935;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+            text-align: center;
+        }
+        #confirmZone p {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+        .confirm-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .confirm-buttons button {
+            padding: 10px 24px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #fff;
+        }
+        .btn-confirm-yes {
+            background: #e53935;
+        }
+        .btn-confirm-no {
+            background: #546e7a;
+        }
+        #statusMessage {
+            display: none;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji-header">⚙️ 🐰</div>
+        <h1>Administration</h1>
+        <p>Panneau de contrôle de la chasse aux œufs de Pâques.</p>
+
+        <div class="status-box" id="statusBox">
+            <h2>📊 État actuel</h2>
+            <p>Chasse démarrée : <span class="status-value" id="statusStarted">...</span></p>
+            <p>Chasse terminée : <span class="status-value" id="statusCompleted">...</span></p>
+            <p>Œufs trouvés : <span class="status-value" id="statusEggs">...</span></p>
+        </div>
+
+        <div class="admin-actions">
+            <button class="admin-btn btn-reset" id="btnReset">🗑️ Réinitialiser ma progression</button>
+            <button class="admin-btn btn-show" id="btnShowEggs">👁️ Afficher les œufs</button>
+            <button class="admin-btn btn-hide" id="btnHideEggs">🙈 Cacher les œufs</button>
+        </div>
+
+        <div id="confirmZone">
+            <p>⚠️ Es-tu sûr(e) ? Toute ta progression sera perdue !</p>
+            <div class="confirm-buttons">
+                <button class="btn-confirm-yes" id="btnConfirmYes">Oui, réinitialiser</button>
+                <button class="btn-confirm-no" id="btnConfirmNo">Annuler</button>
+            </div>
+        </div>
+
+        <div id="statusMessage"></div>
+
+        <button class="admin-btn btn-close" id="btnClose">Fermer</button>
+    </div>
+
+    <script src="https://play.workadventu.re/iframe_api.js"></script>
+    <script>
+        WA.onInit().then(function() {
+            // Afficher l'état actuel
+            var started = WA.player.state.easterHuntStarted === true;
+            var completed = WA.player.state.easterCompleted === true;
+            var progress = WA.player.state.easterProgress || {};
+            var count = Object.values(progress).filter(Boolean).length;
+
+            document.getElementById('statusStarted').textContent = started ? 'Oui ✅' : 'Non ❌';
+            document.getElementById('statusCompleted').textContent = completed ? 'Oui ✅' : 'Non ❌';
+            document.getElementById('statusEggs').textContent = count + ' / 4';
+        });
+
+        function showMessage(text, color) {
+            var msg = document.getElementById('statusMessage');
+            msg.textContent = text;
+            msg.style.display = 'block';
+            msg.style.background = color;
+            setTimeout(function() { msg.style.display = 'none'; }, 4000);
+        }
+
+        // Réinitialiser ma progression
+        document.getElementById('btnReset').addEventListener('click', function() {
+            document.getElementById('confirmZone').style.display = 'block';
+        });
+
+        document.getElementById('btnConfirmYes').addEventListener('click', function() {
+            document.getElementById('confirmZone').style.display = 'none';
+            WA.player.state.easterProgress = null;
+            WA.player.state.easterHuntStarted = false;
+            WA.player.state.easterCompleted = false;
+            WA.player.state.easterScore = 0;
+            showMessage('✅ Progression réinitialisée ! Recharge la page pour recommencer.', 'rgba(76, 175, 80, 0.3)');
+            // Mettre à jour l'affichage
+            document.getElementById('statusStarted').textContent = 'Non ❌';
+            document.getElementById('statusCompleted').textContent = 'Non ❌';
+            document.getElementById('statusEggs').textContent = '0 / 4';
+        });
+
+        document.getElementById('btnConfirmNo').addEventListener('click', function() {
+            document.getElementById('confirmZone').style.display = 'none';
+        });
+
+        // Afficher/cacher les œufs
+        document.getElementById('btnShowEggs').addEventListener('click', function() {
+            WA.room.showLayer('EasterEggs');
+            showMessage('👁️ Les œufs sont maintenant visibles.', 'rgba(67, 160, 71, 0.3)');
+        });
+
+        document.getElementById('btnHideEggs').addEventListener('click', function() {
+            WA.room.hideLayer('EasterEggs');
+            showMessage('🙈 Les œufs sont maintenant cachés.', 'rgba(245, 124, 0, 0.3)');
+        });
+
+        // Fermer
+        document.getElementById('btnClose').addEventListener('click', function() {
+            WA.ui.modal.closeModal();
+        });
+    </script>
+</body>
+</html>
