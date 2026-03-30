@@ -79,8 +79,6 @@
             box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
         }
     </style>
-  <script type="module" crossorigin src="../assets/easterLeaderboard-f3d97e6a.js"></script>
-  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-3cfb730f.js">
   <link rel="stylesheet" href="../assets/css-c8c9743b.css">
 </head>
 <body>
@@ -96,6 +94,59 @@
         <button class="refresh-btn" id="refreshBtn">🔄 Rafraîchir</button>
     </div>
 
-    
+    <script src="https://play.workadventu.re/iframe_api.js"></script>
+    <script>
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderLeaderboard(players) {
+            var list = document.getElementById('leaderboard');
+            if (!list) return;
+            var rankIcons = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+            var classes = ['gold', 'silver', 'bronze'];
+
+            if (players.length === 0) {
+                list.innerHTML = '<li class="empty-state">Personne n\'a encore trouv\u00e9 d\'\u0153uf... \u{1F423}</li>';
+                return;
+            }
+
+            players.sort(function(a, b) { return b.score - a.score; });
+            list.innerHTML = players.map(function(p, i) {
+                var rank = rankIcons[i] || ((i + 1) + '.');
+                var cls = classes[i] || '';
+                return '<li class="' + cls + '">' +
+                    '<span class="rank">' + rank + '</span>' +
+                    '<span class="player-name">' + escapeHtml(p.name) + '</span>' +
+                    '<span class="score">' + p.score + '/4 \u{1F95A}</span>' +
+                    '</li>';
+            }).join('');
+        }
+
+        WA.onInit().then(function() {
+            var myScore = 0;
+            try { myScore = WA.player.state.easterScore || 0; } catch(e) {}
+            var myName = WA.player.name || 'Joueur';
+
+            var scores = [];
+            if (myScore > 0) {
+                scores.push({ name: myName + ' (toi)', score: myScore });
+            }
+
+            renderLeaderboard(scores);
+
+            document.getElementById('refreshBtn').addEventListener('click', function() {
+                var s = 0;
+                try { s = WA.player.state.easterScore || 0; } catch(e) {}
+                var sc = [];
+                if (s > 0) {
+                    sc.push({ name: (WA.player.name || 'Joueur') + ' (toi)', score: s });
+                }
+                renderLeaderboard(sc);
+            });
+        });
+    </script>
 </body>
 </html>
