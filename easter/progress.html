@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progression - Chasse aux Œufs</title>
+    <link rel="stylesheet" href="css.css">
+</head>
+<body>
+    <div class="container">
+        <div class="emoji-header">📊</div>
+        <h2>Ta progression</h2>
+        
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar" style="width: 0%">0%</div>
+        </div>
+
+        <p id="progressText">Chargement...</p>
+
+        <div class="egg-grid" id="eggGrid"></div>
+
+        <button class="btn btn-close" id="closeButton">Fermer</button>
+    </div>
+
+    <script src="https://play.workadventu.re/iframe_api.js"></script>
+    <script type="module" src="progress.ts"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Félicitations !</title>
+    <link rel="stylesheet" href="css.css">
+</head>
+<body>
+    <div class="container">
+        <div class="confetti">🎊 🎉 🎊</div>
+        <div class="trophy">🏆</div>
+        <h1>Félicitations !</h1>
+        <p class="victory-text">Tu as trouvé tous les œufs de Pâques !</p>
+        <p>Tu es un vrai champion de la chasse aux œufs ! Le lapin de Pâques est fier de toi 🐰</p>
+
+        <button class="btn btn-close" id="closeButton" style="margin-top: 20px;">Fermer 🎉</button>
+    </div>
+
+    <script src="https://play.workadventu.re/iframe_api.js"></script>
+    <script>
+        document.getElementById('closeButton').addEventListener('click', function() {
+            WA.ui.modal.closeModal();
+        });
+    </script>
+</body>
+</html>
