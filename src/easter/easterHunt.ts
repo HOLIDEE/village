@@ -6,6 +6,7 @@ import {
     EGG_FOUND_MESSAGES,
     CLUE_TIMEOUT,
     CLUES,
+    EGG_TILE_POSITIONS,
 } from "./constants";
 
 console.info('"Easter Egg Hunt" script started successfully');
@@ -41,6 +42,42 @@ function getRandomMessage(): string {
     return EGG_FOUND_MESSAGES[Math.floor(Math.random() * EGG_FOUND_MESSAGES.length)];
 }
 
+// Cache la tuile d'un œuf trouvé (la remplace par du vide)
+function hideEggTile(areaName: string) {
+    const pos = EGG_TILE_POSITIONS[areaName];
+    if (!pos) return;
+    WA.room.setTiles([{ x: pos.x, y: pos.y, tile: null, layer: EGGS_LAYER }]);
+}
+
+// Cache tous les œufs déjà trouvés par le joueur
+function hideFoundEggs(progress: EasterProgress) {
+    for (const [areaName, found] of Object.entries(progress)) {
+        if (found) hideEggTile(areaName);
+    }
+}
+
+// Sons
+let eggSound: any;
+let victorySound: any;
+
+function loadSounds(root: string) {
+    eggSound = WA.sound.loadSound(`${root}/easter/sounds/egg-found.wav`);
+    victorySound = WA.sound.loadSound(`${root}/easter/sounds/victory.wav`);
+}
+
+function playEggSound() {
+    try { eggSound?.play({ volume: 0.6 }); } catch (_e) { /* ignore */ }
+}
+
+function playVictorySound() {
+    try { victorySound?.play({ volume: 0.8 }); } catch (_e) { /* ignore */ }
+}
+
+// Met à jour la variable publique du joueur (visible par les autres)
+function updatePublicScore(count: number) {
+    WA.player.state.easterScore = count;
+}
+
 WA.onInit().then(() => {
     const mapUrl = WA.room.mapURL;
     const root = mapUrl.substring(0, mapUrl.lastIndexOf("/"));
@@ -50,9 +87,14 @@ WA.onInit().then(() => {
         (WA.player.state.easterProgress as EasterProgress) ?? buildDefaultProgress();
     const isCompleted = WA.player.state.easterCompleted === true;
 
+    // Charger les sons et publier le score
+    loadSounds(root);
+    updatePublicScore(getFoundCount(progress));
+
     // Si le jeu est déjà terminé
     if (isCompleted) {
         WA.room.showLayer(EGGS_LAYER);
+        hideFoundEggs(progress);
         const count = getFoundCount(progress);
         WA.ui.banner.openBanner({
             id: "easter-banner",
@@ -62,6 +104,7 @@ WA.onInit().then(() => {
             closable: true,
             timeToClose: 10000,
         });
+        setupLeaderboard(root);
         return;
     }
 
@@ -69,6 +112,7 @@ WA.onInit().then(() => {
     if (WA.player.state.easterHuntStarted === true) {
         huntStarted = true;
         WA.room.showLayer(EGGS_LAYER);
+        hideFoundEggs(progress);
         const count = getFoundCount(progress);
         WA.ui.banner.openBanner({
             id: "easter-banner",
@@ -80,6 +124,7 @@ WA.onInit().then(() => {
         });
         setupEggListeners(progress, root);
         startClues(progress);
+        setupLeaderboard(root);
         return;
     }
 
@@ -120,8 +165,10 @@ function startHunt(progress: EasterProgress, root: string) {
     huntStarted = true;
     WA.player.state.easterHuntStarted = true;
 
-    // Faire apparaître les œufs
+    // Faire apparaître les œufs (puis cacher ceux déjà trouvés)
     WA.room.showLayer(EGGS_LAYER);
+    hideFoundEggs(progress);
+    setupLeaderboard(root);
 
     // Bannière de démarrage
     WA.ui.banner.openBanner({
@@ -153,7 +200,12 @@ function setupEggListeners(progress: EasterProgress, root: string) {
             progress = currentProgress;
             WA.player.state.easterProgress = { ...currentProgress };
 
+            // Son + cacher l'œuf trouvé
+            playEggSound();
+            hideEggTile(areaName);
+
             const count = getFoundCount(currentProgress);
+            updatePublicScore(count);
 
             // Notification
             WA.ui.banner.openBanner({
@@ -170,8 +222,9 @@ function setupEggListeners(progress: EasterProgress, root: string) {
                 WA.player.state.easterCompleted = true;
                 clearClues();
 
-                // Petite pause puis afficher les félicitations
+                // Petite pause puis fanfare + félicitations
                 setTimeout(() => {
+                    playVictorySound();
                     WA.ui.banner.closeBanner();
                     WA.ui.modal.openModal({
                         title: "Félicitations !",
@@ -222,5 +275,22 @@ function showProgress(_progress: EasterProgress, root: string) {
         allow: "microphone; camera",
         allowApi: true,
         position: "center",
+    });
+}
+
+function setupLeaderboard(root: string) {
+    // Ouvrir le leaderboard quand le joueur entre dans la zone "leaderboard"
+    WA.room.area.onEnter("leaderboard").subscribe(() => {
+        WA.ui.modal.openModal({
+            title: "Classement",
+            src: `${root}/easter/leaderboard.html`,
+            allow: "microphone; camera",
+            allowApi: true,
+            position: "right",
+        });
+    });
+
+    WA.room.area.onLeave("leaderboard").subscribe(() => {
+        WA.ui.modal.closeModal();
     });
 }

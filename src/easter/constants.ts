@@ -11,6 +11,15 @@ export const TOTAL_EGGS = 4;
 // Nom du layer Tiled qui contient les tuiles d'œufs (initialement caché)
 export const EGGS_LAYER = "EasterEggs";
 
+// Position des tuiles d'œufs sur la carte (coordonnées en tiles, pas en pixels)
+// Doit correspondre à l'emplacement des tuiles sur le layer EasterEggs dans Tiled
+export const EGG_TILE_POSITIONS: { [key: string]: { x: number; y: number } } = {
+    easterEgg1: { x: 62, y: 94 },
+    easterEgg2: { x: 64, y: 95 },
+    easterEgg3: { x: 66, y: 96 },
+    easterEgg4: { x: 68, y: 97 },
+};
+
 // Messages affichés quand le joueur trouve un œuf
 export const EGG_FOUND_MESSAGES = [
     "Bravo ! Un œuf de plus dans ton panier ! 🥚",

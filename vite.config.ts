@@ -33,6 +33,7 @@ export default defineConfig({
                 easterInstructions: "./easter/instructions.html",
                 easterProgress: "./easter/progress.html",
                 easterCongratulations: "./easter/congratulations.html",
+                easterLeaderboard: "./easter/leaderboard.html",
                 ...getMapsScripts(maps),
             },
         },
