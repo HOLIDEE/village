@@ -33,6 +33,7 @@ function buildDefaultProgress(): EasterProgress {
 let timeoutClue: ReturnType<typeof setTimeout> | undefined;
 let timeoutClueRegularly: ReturnType<typeof setInterval> | undefined;
 let huntStarted = false;
+let huntPaused = false; // true quand l'admin a désactivé la chasse
 
 function getFoundCount(progress: EasterProgress): number {
     return Object.values(progress).filter(Boolean).length;
@@ -166,6 +167,52 @@ WA.onInit().then(() => {
     console.info("Easter: progress", count, "/", TOTAL_EGGS);
     updatePublicScore(count);
 
+    // Vérifier si la chasse est désactivée par l'admin
+    try {
+        const huntActive = (WA.state as any).easterHuntActive;
+        if (huntActive === false) {
+            huntPaused = true;
+            console.info("Easter: hunt is DISABLED by admin");
+            WA.ui.banner.openBanner({
+                id: "easter-banner",
+                text: "⛔ La chasse aux œufs est actuellement désactivée.",
+                bgColor: "#e53935",
+                textColor: "#ffffff",
+                closable: true,
+                timeToClose: 15000,
+            });
+        }
+    } catch (_e) { /* */ }
+
+    // Écouter activation/désactivation en temps réel
+    try {
+        WA.state.onVariableChange("easterHuntActive").subscribe((value: unknown) => {
+            if (value === false) {
+                huntPaused = true;
+                console.info("Easter: hunt DISABLED by admin (live)");
+                WA.ui.banner.openBanner({
+                    id: "easter-banner",
+                    text: "⛔ La chasse aux œufs a été désactivée par un administrateur.",
+                    bgColor: "#e53935",
+                    textColor: "#ffffff",
+                    closable: true,
+                    timeToClose: 15000,
+                });
+            } else {
+                huntPaused = false;
+                console.info("Easter: hunt ENABLED by admin (live)");
+                WA.ui.banner.openBanner({
+                    id: "easter-banner",
+                    text: "✅ La chasse aux œufs est de nouveau active ! 🐰",
+                    bgColor: "#4CAF50",
+                    textColor: "#ffffff",
+                    closable: true,
+                    timeToClose: 8000,
+                });
+            }
+        });
+    } catch (_e) { /* */ }
+
     // Vérifier l'état du jeu
     let isCompleted = false;
     let wasStarted = false;
@@ -282,6 +329,18 @@ function addRestartButton() {
 
 function startHunt(progress: EasterProgress, root: string) {
     if (huntStarted) return;
+    // Bloquer le démarrage si la chasse est désactivée
+    if (huntPaused) {
+        WA.ui.banner.openBanner({
+            id: "easter-banner",
+            text: "⛔ La chasse aux œufs n'est pas encore ouverte. Patience ! 🐰",
+            bgColor: "#e53935",
+            textColor: "#ffffff",
+            closable: true,
+            timeToClose: 10000,
+        });
+        return;
+    }
     huntStarted = true;
     console.info("Easter: hunt started!");
 
@@ -309,6 +368,18 @@ function setupEggListeners(progress: EasterProgress, root: string) {
         if (progress[areaName]) continue;
 
         WA.room.area.onEnter(areaName).subscribe(() => {
+            // Bloquer si la chasse est désactivée
+            if (huntPaused) {
+                WA.ui.banner.openBanner({
+                    id: "easter-paused",
+                    text: "⛔ La chasse est désactivée pour le moment.",
+                    bgColor: "#e53935",
+                    textColor: "#ffffff",
+                    closable: true,
+                    timeToClose: 5000,
+                });
+                return;
+            }
             const currentProgress =
                 (WA.player.state.easterProgress as EasterProgress) ?? progress;
             if (currentProgress[areaName]) return;
