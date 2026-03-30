@@ -3039,6 +3039,18 @@
                  "width":30.5,
                  "x":2177,
                  "y":3104
+                }, 
+                {
+                 "height":100.333333333333,
+                 "id":1114,
+                 "name":"leaderboard",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"area",
+                 "visible":true,
+                 "width":297.333333333333,
+                 "x":2642.66666666667,
+                 "y":2914.66666666667
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -3172,7 +3184,7 @@
          "name":"EasterEggs",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":200,
          "x":0,
          "y":0
@@ -5808,7 +5820,7 @@
          "y":0
         }],
  "nextlayerid":191,
- "nextobjectid":1113,
+ "nextobjectid":1116,
  "orientation":"orthogonal",
  "properties":[
         {
