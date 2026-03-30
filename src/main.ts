@@ -7,8 +7,6 @@ import "./roofs";
 //import "./scavenger/secretSentence";
 //import "./scavenger/secretWay";
 
-// Easter Egg Hunt - Décommenter la ligne ci-dessous pour activer
-import "./easter/easterHunt";
 
 import "./meeting/doors"
 import "./funnel"
