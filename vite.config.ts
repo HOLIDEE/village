@@ -35,6 +35,7 @@ export default defineConfig({
                 easterCongratulations: "./easter/congratulations.html",
                 easterLeaderboard: "./easter/leaderboard.html",
                 easterAdmin: "./easter/admin.html",
+                easterTeamsPanel: "./easter/teams-panel.html",
                 ...getMapsScripts(maps),
             },
         },

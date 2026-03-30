@@ -2,11 +2,11 @@
 
 /**
  * Bouton "💬 Teams" pour les membres de l'équipe.
- * Ouvre Microsoft Teams dans le panneau latéral de WorkAdventure.
- * Uniquement visible pour les utilisateurs avec le tag "team".
+ * Ouvre un panneau latéral Teams dans WorkAdventure.
+ * Le panneau charge notre page teams-panel.html qui :
+ *   - Tente d'afficher Teams directement (iframe)
+ *   - Si bloqué par Microsoft → affiche un lanceur avec popup dédiée
  */
-
-const TEAMS_URL = "https://teams.cloud.microsoft/";
 
 export {};
 
@@ -14,7 +14,6 @@ let teamsCoWebsite: { close(): Promise<void> } | null = null;
 let teamsOpen = false;
 
 WA.onInit().then(() => {
-    // Uniquement pour les membres de l'équipe
     if (!WA.player.tags.includes("team")) {
         console.info("Teams: user is not team member, skipping");
         return;
@@ -22,18 +21,20 @@ WA.onInit().then(() => {
 
     console.info("Teams: adding Teams button for team member");
 
+    const mapUrl = WA.room.mapURL;
+    const root = mapUrl.substring(0, mapUrl.lastIndexOf("/"));
+
     WA.ui.actionBar.addButton({
         id: "teams-chat-btn",
         label: "💬 Teams",
         callback: () => {
-            toggleTeams();
+            toggleTeams(root);
         },
     });
 });
 
-async function toggleTeams() {
+async function toggleTeams(root: string) {
     if (teamsOpen && teamsCoWebsite) {
-        // Fermer le panneau
         try {
             await teamsCoWebsite.close();
         } catch (_e) { /* */ }
@@ -43,22 +44,20 @@ async function toggleTeams() {
         return;
     }
 
-    // Ouvrir Teams dans le panneau latéral
     try {
         teamsCoWebsite = await WA.nav.openCoWebSite(
-            TEAMS_URL,
-            false,                              // allowApi
-            "microphone; camera; display-capture", // allowPolicy
-            40,                                 // widthPercent (40% de l'écran)
-            0,                                  // position
-            true,                               // closable
-            false                               // lazy
+            `${root}/easter/teams-panel.html`,
+            false,
+            "microphone; camera; display-capture",
+            40,
+            0,
+            true,
+            false
         );
         teamsOpen = true;
         console.info("Teams: panel opened");
     } catch (e) {
-        console.warn("Teams: openCoWebSite failed, falling back to new tab", e);
-        // Plan B : ouvrir dans un nouvel onglet
-        WA.nav.openTab(TEAMS_URL);
+        console.warn("Teams: openCoWebSite failed", e);
+        WA.nav.openTab("https://teams.cloud.microsoft/");
     }
 }
