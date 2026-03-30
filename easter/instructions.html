@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chasse aux Œufs de Pâques</title>
+    
+  <link rel="stylesheet" href="../assets/css-c8c9743b.css">
+</head>
+<body>
+    <div class="container">
+        <div class="emoji-header">🐰 🥚 🌷</div>
+        <h1>Chasse aux Œufs de Pâques !</h1>
+        <p>Bienvenue dans la grande chasse aux œufs ! Des œufs colorés ont été cachés partout sur la carte. Sauras-tu tous les retrouver ?</p>
+        
+        <ul class="rules">
+            <li>🔍 Explore la carte pour trouver les œufs cachés</li>
+            <li>🥚 Marche sur un œuf pour le collecter</li>
+            <li>📊 Suis ta progression en temps réel</li>
+            <li>🏆 Trouve-les tous pour gagner !</li>
+        </ul>
+
+        <p><strong>Es-tu prêt(e) ?</strong></p>
+
+        <button class="btn btn-start" id="startButton">C'est parti ! 🚀</button>
+    </div>
+
+    <script src="https://play.workadventu.re/iframe_api.js"></script>
+    <script>
+        document.getElementById('startButton').addEventListener('click', function() {
+            WA.event.broadcast("easterHuntStart", {});
+            WA.ui.modal.closeModal();
+        });
+    </script>
+</body>
+</html>
