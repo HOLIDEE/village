@@ -81,13 +81,29 @@ function playVictorySound() {
 
 // =============================================
 // SCORE PUBLIC : chaque joueur publie son score
-// dans WA.player.state pour que les voisins le lisent
+// dans WA.player.state ET dans le classement partagé
 // =============================================
 function updatePublicScore(count: number) {
     try {
         WA.player.state.easterScore = count;
         WA.player.state.easterPlayerName = WA.player.name || "Joueur";
     } catch (_e) { /* */ }
+    updateSharedLeaderboard(count);
+}
+
+// Classement partagé via WA.state (variable de salle)
+function updateSharedLeaderboard(count: number) {
+    try {
+        const playerName = WA.player.name || "Joueur";
+        const raw = (WA.state as any).easterLeaderboard as string || "{}";
+        let lb: Record<string, { score: number; ts: number }> = {};
+        try { lb = JSON.parse(raw); } catch (_e) { lb = {}; }
+        lb[playerName] = { score: count, ts: Date.now() };
+        (WA.state as any).easterLeaderboard = JSON.stringify(lb);
+        console.info("Easter: shared leaderboard updated", playerName, count);
+    } catch (e) {
+        console.warn("Easter: updateSharedLeaderboard failed", e);
+    }
 }
 
 // =============================================
@@ -100,6 +116,15 @@ function resetMyProgress() {
     WA.player.state.easterScore = 0;
     WA.player.state.easterPlayerName = "";
     WA.player.state.easterHuntDisabled = false;
+    // Retirer du classement partagé
+    try {
+        const playerName = WA.player.name || "Joueur";
+        const raw = (WA.state as any).easterLeaderboard as string || "{}";
+        let lb: Record<string, unknown> = {};
+        try { lb = JSON.parse(raw); } catch (_e) { lb = {}; }
+        delete lb[playerName];
+        (WA.state as any).easterLeaderboard = JSON.stringify(lb);
+    } catch (_e) { /* */ }
     console.info("Easter: progress reset");
 }
 

@@ -2609,6 +2609,59 @@
                  "width":64,
                  "x":2784,
                  "y":896
+                }, 
+                {
+                 "height":0,
+                 "id":1623,
+                 "name":"easterLeaderboard",
+                 "opacity":1,
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"default",
+                         "type":"string",
+                         "value":"{}"
+                        }, 
+                        {
+                         "name":"persist",
+                         "type":"bool",
+                         "value":true
+                        }, 
+                        {
+                         "name":"jsonType",
+                         "type":"string",
+                         "value":"object"
+                        }],
+                 "rotation":0,
+                 "type":"variable",
+                 "visible":true,
+                 "width":0,
+                 "x":100,
+                 "y":100
+                }, 
+                {
+                 "height":0,
+                 "id":1624,
+                 "name":"easterHuntActive",
+                 "opacity":1,
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"default",
+                         "type":"bool",
+                         "value":true
+                        }, 
+                        {
+                         "name":"persist",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":0,
+                 "type":"variable",
+                 "visible":true,
+                 "width":0,
+                 "x":100,
+                 "y":132
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -5842,21 +5895,6 @@
          "name":"script",
          "type":"string",
          "value":"src\/easter.ts"
-        }, 
-        {
-         "name":"easterLeaderboard",
-         "type":"string",
-         "value":"{}"
-        }, 
-        {
-         "name":"easterHuntActive",
-         "type":"bool",
-         "value":true
-        }, 
-        {
-         "name":"easterResetAll",
-         "type":"string",
-         "value":"0"
         }],
  "renderorder":"right-down",
  "tiledversion":"1.12.1",
