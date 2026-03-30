@@ -3031,7 +3031,7 @@
                 {
                  "height":32,
                  "id":1112,
-                 "name":"EasterEgg4",
+                 "name":"easterEgg4",
                  "opacity":1,
                  "rotation":0,
                  "type":"area",
@@ -3172,7 +3172,7 @@
          "name":"EasterEggs",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":200,
          "x":0,
          "y":0
@@ -5829,7 +5829,7 @@
         {
          "name":"script",
          "type":"string",
-         "value":"src\/main.ts"
+         "value":"src\/easter.ts"
         }],
  "renderorder":"right-down",
  "tiledversion":"1.12.1",

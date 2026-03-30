@@ -6,7 +6,7 @@
 // Nombre total d'œufs cachés sur la carte
 // IMPORTANT : Ce nombre doit correspondre au nombre de zones
 // "easterEgg1", "easterEgg2", etc. créées dans Tiled
-export const TOTAL_EGGS = 10;
+export const TOTAL_EGGS = 4;
 
 // Nom du layer Tiled qui contient les tuiles d'œufs (initialement caché)
 export const EGGS_LAYER = "EasterEggs";

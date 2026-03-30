@@ -85,14 +85,17 @@ WA.onInit().then(() => {
 
     // Première visite : afficher les instructions
     WA.ui.modal.openModal({
+        title: "Chasse aux Œufs de Pâques",
         src: `${root}/easter/instructions.html`,
         allow: "microphone; camera",
         allowApi: true,
         position: "center",
+    }, () => {
+        // Callback quand le modal se ferme => lancer la chasse
+        if (!huntStarted) {
+            startHunt(progress, root);
+        }
     });
-
-    // Écouter le message de démarrage envoyé depuis l'iframe instructions.html
-    WA.ui.onRemotePlayerClicked.subscribe(() => {}); // keep alive
 
     // Utiliser un bouton dans la barre d'action pour démarrer
     WA.ui.actionBar.addButton({
@@ -109,20 +112,9 @@ WA.onInit().then(() => {
         },
     });
 
-    // Écouter un broadcast event pour le démarrage depuis le modal
-    listenForStart(progress, root);
-
 }).catch((e: unknown) => console.error(e));
 
-function listenForStart(progress: EasterProgress, root: string) {
-    // Écouter les événements broadcastés depuis l'iframe
-    WA.event.on("easterHuntStart").subscribe(() => {
-        if (!huntStarted) {
-            WA.ui.modal.closeModal();
-            startHunt(progress, root);
-        }
-    });
-}
+
 
 function startHunt(progress: EasterProgress, root: string) {
     huntStarted = true;
@@ -182,6 +174,7 @@ function setupEggListeners(progress: EasterProgress, root: string) {
                 setTimeout(() => {
                     WA.ui.banner.closeBanner();
                     WA.ui.modal.openModal({
+                        title: "Félicitations !",
                         src: `${root}/easter/congratulations.html`,
                         allow: "microphone; camera",
                         allowApi: true,
@@ -224,6 +217,7 @@ function clearClues() {
 
 function showProgress(_progress: EasterProgress, root: string) {
     WA.ui.modal.openModal({
+        title: "Progression",
         src: `${root}/easter/progress.html`,
         allow: "microphone; camera",
         allowApi: true,
