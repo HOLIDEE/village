@@ -102,7 +102,7 @@
         </ul>
 
         <button class="refresh-btn" id="refreshBtn">🔄 Rafraîchir</button>
-        <p class="info-text">Le classement montre les joueurs connectés et proches de vous.</p>
+        <p class="info-text">Classement global de tous les participants.</p>
     </div>
 
     <script src="https://play.workadventu.re/iframe_api.js"></script>
@@ -114,11 +114,37 @@
         }
 
         var myName = 'Moi';
-        var entries = [];
 
-        function renderLeaderboard() {
+        function renderLeaderboard(raw) {
             var list = document.getElementById('leaderboard');
             if (!list) return;
+
+            var lb = {};
+            try {
+                if (typeof raw === 'string') {
+                    lb = JSON.parse(raw);
+                } else if (raw && typeof raw === 'object') {
+                    lb = raw;
+                }
+            } catch(e) {
+                lb = {};
+            }
+
+            var entries = [];
+            for (var name in lb) {
+                if (lb.hasOwnProperty(name)) {
+                    var entry = lb[name];
+                    var score = (typeof entry === 'object' && entry !== null) ? (entry.score || 0) : (typeof entry === 'number' ? entry : 0);
+                    entries.push({ name: name, score: score });
+                }
+            }
+
+            // Trier par score décroissant, puis par nom
+            entries.sort(function(a, b) {
+                if (b.score !== a.score) return b.score - a.score;
+                return a.name.localeCompare(b.name);
+            });
+
             var rankIcons = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
             var classes = ['gold', 'silver', 'bronze'];
 
@@ -127,20 +153,7 @@
                 return;
             }
 
-            // Trier par score décroissant
-            entries.sort(function(a, b) { return b.score - a.score; });
-
-            // Dédupliquer par nom (garder le meilleur score)
-            var seen = {};
-            var unique = [];
-            for (var i = 0; i < entries.length; i++) {
-                if (!seen[entries[i].name]) {
-                    seen[entries[i].name] = true;
-                    unique.push(entries[i]);
-                }
-            }
-
-            list.innerHTML = unique.map(function(p, i) {
+            list.innerHTML = entries.map(function(p, i) {
                 var rank = rankIcons[i] || ((i + 1) + '.');
                 var cls = classes[i] || '';
                 var isMe = (p.name === myName);
@@ -154,105 +167,33 @@
             }).join('');
         }
 
-        function scanPlayers() {
-            entries = [];
-
-            // 1. Mon propre score
-            try {
-                var myScore = WA.player.state.easterScore;
-                myName = WA.player.name || 'Moi';
-                if (typeof myScore === 'number' && myScore > 0) {
-                    entries.push({ name: myName, score: myScore });
-                }
-            } catch(e) {
-                console.warn('Leaderboard: error reading own score', e);
-            }
-
-            // 2. Scores des joueurs proches via WA.players.list()
-            try {
-                var players = WA.players.list();
-                for (var it = players.next(); !it.done; it = players.next()) {
-                    var p = it.value;
-                    var score = p.state.easterScore;
-                    var name = p.state.easterPlayerName || p.name || 'Joueur';
-                    if (typeof score === 'number' && score > 0) {
-                        entries.push({ name: String(name), score: score });
-                    }
-                }
-            } catch(e) {
-                console.warn('Leaderboard: error scanning players', e);
-            }
-
-            console.info('Leaderboard: found', entries.length, 'entries');
-            renderLeaderboard();
-        }
-
         WA.onInit().then(function() {
-            console.info('Leaderboard: init');
+            myName = WA.player.name || 'Moi';
 
-            // Configurer le tracking pour pouvoir lister les joueurs
-            WA.players.configureTracking({ players: true }).then(function() {
-                console.info('Leaderboard: tracking OK');
-                scanPlayers();
-            }).catch(function(e) {
-                console.warn('Leaderboard: configureTracking failed', e);
-                // Essayer quand même avec notre propre score
-                scanPlayers();
+            // Lire le classement partagé depuis WA.state
+            var raw = WA.state.easterLeaderboard;
+            console.info('Leaderboard: initial data', raw);
+            renderLeaderboard(raw);
+
+            // Écouter les mises à jour en temps réel
+            WA.state.onVariableChange('easterLeaderboard').subscribe(function(value) {
+                console.info('Leaderboard: updated', value);
+                renderLeaderboard(value);
             });
+        }).catch(function(e) {
+            console.error('Leaderboard: init failed', e);
+            document.getElementById('leaderboard').innerHTML =
+                '<li class="empty-state">Erreur de chargement \u{1F61E}</li>';
+        });
 
-            // Écouter les changements de score en temps réel
+        // Bouton Rafraîchir
+        document.getElementById('refreshBtn').addEventListener('click', function() {
             try {
-                WA.players.onVariableChange('easterScore').subscribe(function(event) {
-                    var score = typeof event.value === 'number' ? event.value : 0;
-                    var name = String((event.player.state && event.player.state.easterPlayerName) || event.player.name || 'Joueur');
-                    console.info('Leaderboard: score change', name, '=', score);
-
-                    // Mettre à jour ou ajouter
-                    var found = false;
-                    for (var i = 0; i < entries.length; i++) {
-                        if (entries[i].name === name) {
-                            entries[i].score = score;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found && score > 0) {
-                        entries.push({ name: name, score: score });
-                    }
-                    renderLeaderboard();
-                });
+                var raw = WA.state.easterLeaderboard;
+                renderLeaderboard(raw);
             } catch(e) {
-                console.warn('Leaderboard: onVariableChange failed', e);
+                console.warn('Leaderboard: refresh failed', e);
             }
-
-            // Quand un joueur entre dans la zone visible
-            try {
-                WA.players.onPlayerEnters.subscribe(function(player) {
-                    var score = player.state && player.state.easterScore;
-                    var name = String((player.state && player.state.easterPlayerName) || player.name || 'Joueur');
-                    if (typeof score === 'number' && score > 0) {
-                        var found = false;
-                        for (var i = 0; i < entries.length; i++) {
-                            if (entries[i].name === name) {
-                                entries[i].score = score;
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            entries.push({ name: name, score: score });
-                        }
-                        renderLeaderboard();
-                    }
-                });
-            } catch(e) {
-                console.warn('Leaderboard: onPlayerEnters failed', e);
-            }
-
-            // Bouton rafraîchir = rescan complet
-            document.getElementById('refreshBtn').addEventListener('click', function() {
-                scanPlayers();
-            });
         });
     </script>
 </body>
