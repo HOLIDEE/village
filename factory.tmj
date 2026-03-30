@@ -2710,18 +2710,18 @@
                  "y":2304
                 }, 
                 {
-                 "height":166.131,
+                 "height":160,
                  "id":1095,
                  "name":"silentOffice_area",
                  "rotation":0,
                  "type":"area",
                  "visible":true,
-                 "width":154.818,
-                 "x":3258.591,
-                 "y":2138.4345
+                 "width":160,
+                 "x":3264,
+                 "y":2144
                 }, 
                 {
-                 "height":166.131,
+                 "height":160,
                  "id":1096,
                  "name":"silentOffice",
                  "properties":[
@@ -2733,9 +2733,9 @@
                  "rotation":0,
                  "type":"zone",
                  "visible":true,
-                 "width":154.818,
-                 "x":3259.091,
-                 "y":2137.9345
+                 "width":160,
+                 "x":3264,
+                 "y":2144
                 }, 
                 {
                  "height":65.272727272727,
