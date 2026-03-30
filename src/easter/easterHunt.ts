@@ -86,17 +86,23 @@ function updatePublicScore(count: number) {
     try { WA.player.state.easterScore = count; } catch (_e) { /* ignore */ }
 }
 
-// Met à jour le classement partagé (persisté dans WA.state, copié dans WA.player.state pour les iframes)
-async function updateSharedLeaderboard(playerName: string, score: number) {
+// Accès direct aux variables room (plus fiable que loadVariable/saveVariable)
+function getRoomVar(name: string): unknown {
+    return (WA.state as any)[name];
+}
+function setRoomVar(name: string, value: unknown) {
+    (WA.state as any)[name] = value;
+}
+
+// Met à jour le classement partagé via accès direct à WA.state
+function updateSharedLeaderboard(playerName: string, score: number) {
     try {
-        let raw = "{}";
-        try { raw = (await WA.state.loadVariable("easterLeaderboard")) as string ?? "{}"; } catch (_e) { /* */ }
-        let lb: { [name: string]: { score: number; date: string } } = {};
-        try { lb = JSON.parse(raw || "{}"); } catch (_e) { lb = {}; }
+        const raw = String(getRoomVar("easterLeaderboard") || "{}");
+        let lb: Record<string, { score: number; date: string }> = {};
+        try { lb = JSON.parse(raw); } catch (_e) { lb = {}; }
         lb[playerName] = { score, date: new Date().toISOString() };
         const newVal = JSON.stringify(lb);
-        await WA.state.saveVariable("easterLeaderboard", newVal);
-        // Copier dans le state joueur pour que les iframes modaux puissent le lire
+        setRoomVar("easterLeaderboard", newVal);
         WA.player.state.leaderboardCache = newVal;
         console.info("Easter: leaderboard saved", newVal);
     } catch (e) {
@@ -104,14 +110,64 @@ async function updateSharedLeaderboard(playerName: string, score: number) {
     }
 }
 
-// Rafraîchit le cache leaderboard dans player.state (pour que l'iframe puisse le lire)
-async function refreshLeaderboardCache() {
+// Copie le classement room → player.state (pour que les iframes puissent le lire)
+function refreshLeaderboardCache() {
     try {
-        const raw = (await WA.state.loadVariable("easterLeaderboard")) as string ?? "{}";
+        const raw = String(getRoomVar("easterLeaderboard") || "{}");
         WA.player.state.leaderboardCache = raw;
         console.info("Easter: leaderboard cache refreshed", raw);
     } catch (e) {
         console.warn("Easter: leaderboard cache refresh failed", e);
+    }
+}
+
+// Gère les commandes admin envoyées depuis l'iframe admin
+let adminPollInterval: ReturnType<typeof setInterval> | undefined;
+let lastAdminCommand = "";
+
+function handleAdminCommand(cmd: string) {
+    if (!cmd) return;
+    const action = cmd.split(":")[0];
+    console.info("Easter: admin command:", action);
+    switch (action) {
+        case "resetLeaderboard":
+            setRoomVar("easterLeaderboard", "{}");
+            WA.player.state.leaderboardCache = "{}";
+            break;
+        case "deactivateHunt":
+            setRoomVar("easterHuntActive", false);
+            break;
+        case "activateHunt":
+            setRoomVar("easterHuntActive", true);
+            break;
+        case "resetAll":
+            setRoomVar("easterLeaderboard", "{}");
+            setRoomVar("easterResetAll", String(Date.now()));
+            WA.player.state.leaderboardCache = "{}";
+            WA.player.state.easterProgress = null;
+            WA.player.state.easterHuntStarted = false;
+            WA.player.state.easterCompleted = false;
+            WA.player.state.easterScore = 0;
+            break;
+    }
+}
+
+function startAdminCommandPolling() {
+    if (adminPollInterval) return;
+    lastAdminCommand = String(WA.player.state.adminCommand || "");
+    adminPollInterval = setInterval(() => {
+        const cmd = String(WA.player.state.adminCommand || "");
+        if (cmd && cmd !== lastAdminCommand) {
+            lastAdminCommand = cmd;
+            handleAdminCommand(cmd);
+        }
+    }, 500);
+}
+
+function stopAdminCommandPolling() {
+    if (adminPollInterval) {
+        clearInterval(adminPollInterval);
+        adminPollInterval = undefined;
     }
 }
 
@@ -136,6 +192,74 @@ WA.onInit().then(() => {
     // ÉTAPE 2 : Charger sons (non bloquant)
     loadSounds(root);
 
+    // Écouter les changements du classement en temps réel
+    try {
+        WA.state.onVariableChange("easterLeaderboard").subscribe((val: unknown) => {
+            WA.player.state.leaderboardCache = String(val || "{}");
+            console.info("Easter: leaderboard updated by room");
+        });
+    } catch (_e) { /* */ }
+
+    // Écouter la désactivation/activation de la chasse par l'admin
+    try {
+        WA.state.onVariableChange("easterHuntActive").subscribe((active: unknown) => {
+            if (active === false) {
+                huntStarted = false;
+                clearClues();
+                try { WA.room.hideLayer(EGGS_LAYER); } catch (_e2) { /* */ }
+                WA.ui.banner.openBanner({
+                    id: "easter-banner",
+                    text: "🚫 La chasse aux œufs a été désactivée par l'administrateur.",
+                    bgColor: "#757575",
+                    textColor: "#ffffff",
+                    closable: true,
+                    timeToClose: 15000,
+                });
+            }
+        });
+    } catch (_e) { /* */ }
+
+    // Écouter le signal de réinitialisation globale
+    try {
+        WA.state.onVariableChange("easterResetAll").subscribe((ts: unknown) => {
+            const timestamp = String(ts || "0");
+            if (timestamp !== "0") {
+                WA.player.state.easterProgress = null;
+                WA.player.state.easterHuntStarted = false;
+                WA.player.state.easterCompleted = false;
+                WA.player.state.easterScore = 0;
+                WA.player.state.leaderboardCache = "{}";
+                WA.player.state.easterLastResetSeen = timestamp;
+                huntStarted = false;
+                clearClues();
+                WA.ui.banner.openBanner({
+                    id: "easter-banner",
+                    text: "🔄 Toutes les progressions ont été réinitialisées ! Rechargez la page.",
+                    bgColor: "#FF5722",
+                    textColor: "#ffffff",
+                    closable: true,
+                    timeToClose: 15000,
+                });
+            }
+        });
+    } catch (_e) { /* */ }
+
+    // Vérifier si la chasse est désactivée par l'admin
+    if (getRoomVar("easterHuntActive") === false) {
+        console.info("Easter: hunt is disabled by admin");
+        WA.ui.banner.openBanner({
+            id: "easter-banner",
+            text: "🚫 La chasse aux œufs est actuellement désactivée.",
+            bgColor: "#757575",
+            textColor: "#ffffff",
+            closable: true,
+            timeToClose: 10000,
+        });
+        setupLeaderboard(root);
+        setupAdminButton(root);
+        return;
+    }
+
     // ÉTAPE 3 : Récupérer la progression
     let progress: EasterProgress;
     try {
@@ -143,6 +267,20 @@ WA.onInit().then(() => {
     } catch (_e) {
         progress = buildDefaultProgress();
     }
+
+    // Vérifier si un reset global a eu lieu pendant l'absence
+    const lastReset = String(getRoomVar("easterResetAll") || "0");
+    const myLastReset = String(WA.player.state.easterLastResetSeen || "0");
+    if (lastReset !== "0" && lastReset !== myLastReset) {
+        console.info("Easter: reset-all detected from previous session");
+        progress = buildDefaultProgress();
+        WA.player.state.easterProgress = null;
+        WA.player.state.easterHuntStarted = false;
+        WA.player.state.easterCompleted = false;
+        WA.player.state.easterScore = 0;
+        WA.player.state.easterLastResetSeen = lastReset;
+    }
+
     const count = getFoundCount(progress);
     console.info("Easter: progress", count, "/", TOTAL_EGGS);
 
@@ -174,7 +312,7 @@ WA.onInit().then(() => {
             timeToClose: 10000,
         });
         setupLeaderboard(root);
-        setupAdminButton(root, progress);
+        setupAdminButton(root);
         return;
     }
 
@@ -195,7 +333,7 @@ WA.onInit().then(() => {
         setupEggListeners(progress, root);
         startClues(progress);
         setupLeaderboard(root);
-        setupAdminButton(root, progress);
+        setupAdminButton(root);
         return;
     }
 
@@ -238,7 +376,7 @@ WA.onInit().then(() => {
         console.warn("Easter: actionBar button failed", e);
     }
 
-    setupAdminButton(root, progress);
+    setupAdminButton(root);
 
 }).catch((e: unknown) => console.error("Easter: WA.onInit FAILED", e));
 
@@ -363,10 +501,9 @@ function showProgress(_progress: EasterProgress, root: string) {
 
 function setupLeaderboard(root: string) {
     try {
-        WA.room.area.onEnter("leaderboard").subscribe(async () => {
+        WA.room.area.onEnter("leaderboard").subscribe(() => {
             console.info("Easter: entered leaderboard zone");
-            // Rafraîchir le cache avant d'ouvrir le modal
-            await refreshLeaderboardCache();
+            refreshLeaderboardCache();
             WA.ui.modal.openModal({
                 title: "Classement",
                 src: `${root}/easter/leaderboard.html`,
@@ -386,7 +523,7 @@ function setupLeaderboard(root: string) {
 // =============================================
 // MENU ADMIN (visible uniquement pour les admins)
 // =============================================
-function setupAdminButton(root: string, _progress: EasterProgress) {
+function setupAdminButton(root: string) {
     try {
         const tags = WA.player.tags;
         console.info("Easter: player tags =", JSON.stringify(tags));
@@ -400,12 +537,18 @@ function setupAdminButton(root: string, _progress: EasterProgress) {
             id: "easter-admin-btn",
             label: "⚙️ Admin Pâques",
             callback: () => {
+                // Préparer les infos pour le panel admin
+                WA.player.state.adminHuntActive = getRoomVar("easterHuntActive") !== false;
+                refreshLeaderboardCache();
+                startAdminCommandPolling();
                 WA.ui.modal.openModal({
                     title: "Administration - Chasse aux Œufs",
                     src: `${root}/easter/admin.html`,
                     allow: "microphone; camera",
                     allowApi: true,
                     position: "right",
+                }, () => {
+                    stopAdminCommandPolling();
                 });
             },
         });

@@ -29,6 +29,12 @@
             transform: scale(1.02);
             filter: brightness(1.1);
         }
+        .btn-activate {
+            background: linear-gradient(135deg, #43a047, #2e7d32);
+        }
+        .btn-deactivate {
+            background: linear-gradient(135deg, #f57c00, #e65100);
+        }
         .btn-reset {
             background: linear-gradient(135deg, #e53935, #c62828);
         }
@@ -37,6 +43,9 @@
         }
         .btn-hide {
             background: linear-gradient(135deg, #f57c00, #e65100);
+        }
+        .btn-resetall {
+            background: linear-gradient(135deg, #b71c1c, #880e0e);
         }
         .btn-close {
             background: linear-gradient(135deg, #546e7a, #37474f);
@@ -58,7 +67,15 @@
             color: #ffd54f;
             font-weight: bold;
         }
-        #confirmZone {
+        .section-title {
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            color: #ffd54f;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            padding-bottom: 4px;
+        }
+        .confirm-box {
             display: none;
             background: rgba(229, 57, 53, 0.15);
             border: 2px solid #e53935;
@@ -67,7 +84,7 @@
             margin: 12px 0;
             text-align: center;
         }
-        #confirmZone p {
+        .confirm-box p {
             margin-bottom: 12px;
             font-size: 0.95rem;
         }
@@ -109,20 +126,32 @@
 
         <div class="status-box" id="statusBox">
             <h2>📊 État actuel</h2>
-            <p>Chasse démarrée : <span class="status-value" id="statusStarted">...</span></p>
-            <p>Chasse terminée : <span class="status-value" id="statusCompleted">...</span></p>
-            <p>Œufs trouvés : <span class="status-value" id="statusEggs">...</span></p>
+            <p>Chasse active : <span class="status-value" id="statusActive">...</span></p>
+            <p>Ma progression : <span class="status-value" id="statusStarted">...</span></p>
+            <p>Mes œufs trouvés : <span class="status-value" id="statusEggs">...</span></p>
             <p>Classement : <span class="status-value" id="statusLb">...</span></p>
         </div>
 
+        <h3 class="section-title">🎮 Contrôle de la chasse</h3>
+        <div class="admin-actions">
+            <button class="admin-btn btn-activate" id="btnActivate">✅ Activer la chasse</button>
+            <button class="admin-btn btn-deactivate" id="btnDeactivate">⛔ Désactiver la chasse</button>
+        </div>
+
+        <h3 class="section-title">🔧 Outils</h3>
         <div class="admin-actions">
             <button class="admin-btn btn-reset" id="btnReset">🗑️ Réinitialiser ma progression</button>
             <button class="admin-btn btn-show" id="btnShowEggs">👁️ Afficher les œufs</button>
             <button class="admin-btn btn-hide" id="btnHideEggs">🙈 Cacher les œufs</button>
-            <button class="admin-btn btn-reset" id="btnResetLeaderboard" style="background: linear-gradient(135deg, #d32f2f, #b71c1c);">📉 Vider le classement</button>
         </div>
 
-        <div id="confirmZone">
+        <h3 class="section-title">⚠️ Zone dangereuse</h3>
+        <div class="admin-actions">
+            <button class="admin-btn btn-reset" id="btnResetLeaderboard">📉 Vider le classement</button>
+            <button class="admin-btn btn-resetall" id="btnResetAll">💣 Réinitialiser TOUT (classement + toutes les progressions)</button>
+        </div>
+
+        <div class="confirm-box" id="confirmZone">
             <p>⚠️ Es-tu sûr(e) ? Toute ta progression sera perdue !</p>
             <div class="confirm-buttons">
                 <button class="btn-confirm-yes" id="btnConfirmYes">Oui, réinitialiser</button>
@@ -130,11 +159,19 @@
             </div>
         </div>
 
-        <div id="confirmLeaderboard" style="display:none; background: rgba(211, 47, 47, 0.15); border: 2px solid #d32f2f; border-radius: 12px; padding: 16px; margin: 12px 0; text-align: center;">
+        <div class="confirm-box" id="confirmLeaderboard">
             <p>⚠️ Vider le classement pour TOUS les joueurs ?</p>
             <div class="confirm-buttons">
                 <button class="btn-confirm-yes" id="btnConfirmLbYes">Oui, vider</button>
                 <button class="btn-confirm-no" id="btnConfirmLbNo">Annuler</button>
+            </div>
+        </div>
+
+        <div class="confirm-box" id="confirmResetAll">
+            <p>🚨 ATTENTION : Cela va supprimer le classement ET réinitialiser la progression de TOUS les joueurs ! Cette action est irréversible.</p>
+            <div class="confirm-buttons">
+                <button class="btn-confirm-yes" id="btnConfirmResetAllYes">Oui, tout réinitialiser</button>
+                <button class="btn-confirm-no" id="btnConfirmResetAllNo">Annuler</button>
             </div>
         </div>
 
@@ -145,25 +182,30 @@
 
     <script src="https://play.workadventu.re/iframe_api.js"></script>
     <script>
+        // Envoie une commande au script principal via WA.player.state
+        function sendAdminCommand(action) {
+            WA.player.state.adminCommand = action + ':' + Date.now();
+            console.info('Admin: sent command', action);
+        }
+
         WA.onInit().then(function() {
-            // Afficher l'état actuel
+            // Lire l'état depuis player.state (fiable dans iframe)
             var started = WA.player.state.easterHuntStarted === true;
             var completed = WA.player.state.easterCompleted === true;
+            var huntActive = WA.player.state.adminHuntActive !== false;
             var progress = WA.player.state.easterProgress || {};
             var count = Object.values(progress).filter(Boolean).length;
 
-            // Compter les joueurs dans le classement
+            // Compter les joueurs dans le classement via le cache
             var lbCount = 0;
             try {
-                WA.state.loadVariable('easterLeaderboard').then(function(raw) {
-                    var lb = JSON.parse(raw || '{}');
-                    lbCount = Object.keys(lb).length;
-                    document.getElementById('statusLb').textContent = lbCount + ' joueur(s)';
-                });
+                var raw = WA.player.state.leaderboardCache || '{}';
+                var lb = JSON.parse(raw);
+                lbCount = Object.keys(lb).length;
             } catch(e) {}
 
-            document.getElementById('statusStarted').textContent = started ? 'Oui \u2705' : 'Non \u274C';
-            document.getElementById('statusCompleted').textContent = completed ? 'Oui \u2705' : 'Non \u274C';
+            document.getElementById('statusActive').textContent = huntActive ? 'Oui \u2705' : 'Non \u274C';
+            document.getElementById('statusStarted').textContent = started ? (completed ? 'Termin\u00e9e \u2705' : 'En cours \u{1F3C3}') : 'Pas commenc\u00e9e';
             document.getElementById('statusEggs').textContent = count + ' / 4';
             document.getElementById('statusLb').textContent = lbCount + ' joueur(s)';
         });
@@ -176,6 +218,20 @@
             setTimeout(function() { msg.style.display = 'none'; }, 4000);
         }
 
+        // Activer la chasse
+        document.getElementById('btnActivate').addEventListener('click', function() {
+            sendAdminCommand('activateHunt');
+            document.getElementById('statusActive').textContent = 'Oui \u2705';
+            showMessage('\u2705 Chasse activ\u00e9e ! Les joueurs peuvent chercher les \u0153ufs.', 'rgba(76, 175, 80, 0.3)');
+        });
+
+        // Désactiver la chasse
+        document.getElementById('btnDeactivate').addEventListener('click', function() {
+            sendAdminCommand('deactivateHunt');
+            document.getElementById('statusActive').textContent = 'Non \u274C';
+            showMessage('\u26d4 Chasse d\u00e9sactiv\u00e9e. Plus personne ne peut chercher.', 'rgba(245, 124, 0, 0.3)');
+        });
+
         // Réinitialiser ma progression
         document.getElementById('btnReset').addEventListener('click', function() {
             document.getElementById('confirmZone').style.display = 'block';
@@ -187,10 +243,8 @@
             WA.player.state.easterHuntStarted = false;
             WA.player.state.easterCompleted = false;
             WA.player.state.easterScore = 0;
-            showMessage('✅ Progression réinitialisée ! Recharge la page pour recommencer.', 'rgba(76, 175, 80, 0.3)');
-            // Mettre à jour l'affichage
-            document.getElementById('statusStarted').textContent = 'Non ❌';
-            document.getElementById('statusCompleted').textContent = 'Non ❌';
+            showMessage('\u2705 Ta progression a \u00e9t\u00e9 r\u00e9initialis\u00e9e ! Recharge la page.', 'rgba(76, 175, 80, 0.3)');
+            document.getElementById('statusStarted').textContent = 'Pas commenc\u00e9e';
             document.getElementById('statusEggs').textContent = '0 / 4';
         });
 
@@ -201,17 +255,12 @@
         // Afficher/cacher les œufs
         document.getElementById('btnShowEggs').addEventListener('click', function() {
             WA.room.showLayer('EasterEggs');
-            showMessage('👁️ Les œufs sont maintenant visibles.', 'rgba(67, 160, 71, 0.3)');
+            showMessage('\u{1F441}\uFE0F Les \u0153ufs sont maintenant visibles.', 'rgba(67, 160, 71, 0.3)');
         });
 
         document.getElementById('btnHideEggs').addEventListener('click', function() {
             WA.room.hideLayer('EasterEggs');
-            showMessage('🙈 Les œufs sont maintenant cachés.', 'rgba(245, 124, 0, 0.3)');
-        });
-
-        // Fermer
-        document.getElementById('btnClose').addEventListener('click', function() {
-            WA.ui.modal.closeModal();
+            showMessage('\u{1F648} Les \u0153ufs sont maintenant cach\u00e9s.', 'rgba(245, 124, 0, 0.3)');
         });
 
         // Vider le classement
@@ -220,13 +269,33 @@
         });
         document.getElementById('btnConfirmLbYes').addEventListener('click', function() {
             document.getElementById('confirmLeaderboard').style.display = 'none';
-            WA.state.saveVariable('easterLeaderboard', '{}').then(function() {
-                showMessage('\u2705 Classement vid\u00e9 !', 'rgba(76, 175, 80, 0.3)');
-                document.getElementById('statusLb').textContent = '0 joueur(s)';
-            });
+            sendAdminCommand('resetLeaderboard');
+            showMessage('\u2705 Classement vid\u00e9 !', 'rgba(76, 175, 80, 0.3)');
+            document.getElementById('statusLb').textContent = '0 joueur(s)';
         });
         document.getElementById('btnConfirmLbNo').addEventListener('click', function() {
             document.getElementById('confirmLeaderboard').style.display = 'none';
+        });
+
+        // Réinitialiser TOUT
+        document.getElementById('btnResetAll').addEventListener('click', function() {
+            document.getElementById('confirmResetAll').style.display = 'block';
+        });
+        document.getElementById('btnConfirmResetAllYes').addEventListener('click', function() {
+            document.getElementById('confirmResetAll').style.display = 'none';
+            sendAdminCommand('resetAll');
+            showMessage('\u{1F4A3} Tout a \u00e9t\u00e9 r\u00e9initialis\u00e9 ! Tous les joueurs doivent recharger la page.', 'rgba(183, 28, 28, 0.3)');
+            document.getElementById('statusLb').textContent = '0 joueur(s)';
+            document.getElementById('statusStarted').textContent = 'Pas commenc\u00e9e';
+            document.getElementById('statusEggs').textContent = '0 / 4';
+        });
+        document.getElementById('btnConfirmResetAllNo').addEventListener('click', function() {
+            document.getElementById('confirmResetAll').style.display = 'none';
+        });
+
+        // Fermer
+        document.getElementById('btnClose').addEventListener('click', function() {
+            WA.ui.modal.closeModal();
         });
     </script>
 </body>
