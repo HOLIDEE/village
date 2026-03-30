@@ -38,6 +38,10 @@
             background: linear-gradient(135deg, rgba(205, 127, 50, 0.2), rgba(184, 115, 51, 0.15));
             border-color: rgba(205, 127, 50, 0.3);
         }
+        .leaderboard li.me {
+            border-color: rgba(33, 150, 243, 0.6);
+            background: rgba(33, 150, 243, 0.15);
+        }
         .rank {
             font-size: 1.4rem;
             min-width: 40px;
@@ -78,6 +82,12 @@
             transform: scale(1.05);
             box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
         }
+        .info-text {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 12px;
+            font-style: italic;
+        }
     </style>
   <link rel="stylesheet" href="../assets/css-c8c9743b.css">
 </head>
@@ -92,6 +102,7 @@
         </ul>
 
         <button class="refresh-btn" id="refreshBtn">🔄 Rafraîchir</button>
+        <p class="info-text">Le classement montre les joueurs connectés et proches de vous.</p>
     </div>
 
     <script src="https://play.workadventu.re/iframe_api.js"></script>
@@ -102,7 +113,10 @@
             return div.innerHTML;
         }
 
-        function renderLeaderboard(entries) {
+        var myName = 'Moi';
+        var entries = [];
+
+        function renderLeaderboard() {
             var list = document.getElementById('leaderboard');
             if (!list) return;
             var rankIcons = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
@@ -113,44 +127,131 @@
                 return;
             }
 
+            // Trier par score décroissant
             entries.sort(function(a, b) { return b.score - a.score; });
-            list.innerHTML = entries.map(function(p, i) {
+
+            // Dédupliquer par nom (garder le meilleur score)
+            var seen = {};
+            var unique = [];
+            for (var i = 0; i < entries.length; i++) {
+                if (!seen[entries[i].name]) {
+                    seen[entries[i].name] = true;
+                    unique.push(entries[i]);
+                }
+            }
+
+            list.innerHTML = unique.map(function(p, i) {
                 var rank = rankIcons[i] || ((i + 1) + '.');
                 var cls = classes[i] || '';
-                return '<li class="' + cls + '">' +
+                var isMe = (p.name === myName);
+                if (isMe) cls += ' me';
+                var displayName = isMe ? p.name + ' (toi)' : p.name;
+                return '<li class="' + cls.trim() + '">' +
                     '<span class="rank">' + rank + '</span>' +
-                    '<span class="player-name">' + escapeHtml(p.name) + '</span>' +
+                    '<span class="player-name">' + escapeHtml(displayName) + '</span>' +
                     '<span class="score">' + p.score + '/4 \u{1F95A}</span>' +
                     '</li>';
             }).join('');
         }
 
-        function loadFromSharedState() {
+        function scanPlayers() {
+            entries = [];
+
+            // 1. Mon propre score
             try {
-                // Lire depuis le cache joueur (mis à jour par le script principal)
-                var raw = WA.player.state.leaderboardCache || '{}';
-                console.info('Leaderboard raw:', raw);
-                var lb = {};
-                try { lb = JSON.parse(raw); } catch(e) { lb = {}; }
-                var entries = [];
-                for (var name in lb) {
-                    if (lb.hasOwnProperty(name)) {
-                        entries.push({ name: name, score: lb[name].score || 0 });
+                var myScore = WA.player.state.easterScore;
+                myName = WA.player.name || 'Moi';
+                if (typeof myScore === 'number' && myScore > 0) {
+                    entries.push({ name: myName, score: myScore });
+                }
+            } catch(e) {
+                console.warn('Leaderboard: error reading own score', e);
+            }
+
+            // 2. Scores des joueurs proches via WA.players.list()
+            try {
+                var players = WA.players.list();
+                for (var it = players.next(); !it.done; it = players.next()) {
+                    var p = it.value;
+                    var score = p.state.easterScore;
+                    var name = p.state.easterPlayerName || p.name || 'Joueur';
+                    if (typeof score === 'number' && score > 0) {
+                        entries.push({ name: String(name), score: score });
                     }
                 }
-                renderLeaderboard(entries);
             } catch(e) {
-                console.error('Leaderboard: error', e);
-                document.getElementById('leaderboard').innerHTML =
-                    '<li class="empty-state">Impossible de charger le classement \u{1F615}</li>';
+                console.warn('Leaderboard: error scanning players', e);
             }
+
+            console.info('Leaderboard: found', entries.length, 'entries');
+            renderLeaderboard();
         }
 
         WA.onInit().then(function() {
-            loadFromSharedState();
+            console.info('Leaderboard: init');
 
+            // Configurer le tracking pour pouvoir lister les joueurs
+            WA.players.configureTracking({ players: true }).then(function() {
+                console.info('Leaderboard: tracking OK');
+                scanPlayers();
+            }).catch(function(e) {
+                console.warn('Leaderboard: configureTracking failed', e);
+                // Essayer quand même avec notre propre score
+                scanPlayers();
+            });
+
+            // Écouter les changements de score en temps réel
+            try {
+                WA.players.onVariableChange('easterScore').subscribe(function(event) {
+                    var score = typeof event.value === 'number' ? event.value : 0;
+                    var name = String((event.player.state && event.player.state.easterPlayerName) || event.player.name || 'Joueur');
+                    console.info('Leaderboard: score change', name, '=', score);
+
+                    // Mettre à jour ou ajouter
+                    var found = false;
+                    for (var i = 0; i < entries.length; i++) {
+                        if (entries[i].name === name) {
+                            entries[i].score = score;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found && score > 0) {
+                        entries.push({ name: name, score: score });
+                    }
+                    renderLeaderboard();
+                });
+            } catch(e) {
+                console.warn('Leaderboard: onVariableChange failed', e);
+            }
+
+            // Quand un joueur entre dans la zone visible
+            try {
+                WA.players.onPlayerEnters.subscribe(function(player) {
+                    var score = player.state && player.state.easterScore;
+                    var name = String((player.state && player.state.easterPlayerName) || player.name || 'Joueur');
+                    if (typeof score === 'number' && score > 0) {
+                        var found = false;
+                        for (var i = 0; i < entries.length; i++) {
+                            if (entries[i].name === name) {
+                                entries[i].score = score;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            entries.push({ name: name, score: score });
+                        }
+                        renderLeaderboard();
+                    }
+                });
+            } catch(e) {
+                console.warn('Leaderboard: onPlayerEnters failed', e);
+            }
+
+            // Bouton rafraîchir = rescan complet
             document.getElementById('refreshBtn').addEventListener('click', function() {
-                loadFromSharedState();
+                scanPlayers();
             });
         });
     </script>

@@ -29,12 +29,6 @@
             transform: scale(1.02);
             filter: brightness(1.1);
         }
-        .btn-activate {
-            background: linear-gradient(135deg, #43a047, #2e7d32);
-        }
-        .btn-deactivate {
-            background: linear-gradient(135deg, #f57c00, #e65100);
-        }
         .btn-reset {
             background: linear-gradient(135deg, #e53935, #c62828);
         }
@@ -43,9 +37,6 @@
         }
         .btn-hide {
             background: linear-gradient(135deg, #f57c00, #e65100);
-        }
-        .btn-resetall {
-            background: linear-gradient(135deg, #b71c1c, #880e0e);
         }
         .btn-close {
             background: linear-gradient(135deg, #546e7a, #37474f);
@@ -116,6 +107,29 @@
             font-weight: bold;
             text-align: center;
         }
+        .info-box {
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid rgba(33, 150, 243, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin: 16px 0;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .players-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+        .players-list li {
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
   <link rel="stylesheet" href="../assets/css-c8c9743b.css">
 </head>
@@ -123,33 +137,30 @@
     <div class="container">
         <div class="emoji-header">⚙️ 🐰</div>
         <h1>Administration</h1>
-        <p>Panneau de contrôle de la chasse aux œufs de Pâques.</p>
+        <p>Panneau de contrôle de la chasse aux œufs.</p>
 
-        <div class="status-box" id="statusBox">
-            <h2>📊 État actuel</h2>
-            <p>Chasse active : <span class="status-value" id="statusActive">...</span></p>
-            <p>Ma progression : <span class="status-value" id="statusStarted">...</span></p>
-            <p>Mes œufs trouvés : <span class="status-value" id="statusEggs">...</span></p>
-            <p>Classement : <span class="status-value" id="statusLb">...</span></p>
+        <div class="status-box">
+            <h2>📊 Ma progression</h2>
+            <p>Chasse : <span class="status-value" id="statusStarted">...</span></p>
+            <p>Mes œufs : <span class="status-value" id="statusEggs">...</span></p>
         </div>
 
-        <h3 class="section-title">🎮 Contrôle de la chasse</h3>
-        <div class="admin-actions">
-            <button class="admin-btn btn-activate" id="btnActivate">✅ Activer la chasse</button>
-            <button class="admin-btn btn-deactivate" id="btnDeactivate">⛔ Désactiver la chasse</button>
+        <div class="status-box">
+            <h2>👥 Joueurs connectés (proches)</h2>
+            <ul class="players-list" id="playersList">
+                <li>Chargement...</li>
+            </ul>
         </div>
 
-        <h3 class="section-title">🔧 Outils</h3>
+        <h3 class="section-title">🔧 Actions</h3>
         <div class="admin-actions">
-            <button class="admin-btn btn-reset" id="btnReset">🗑️ Réinitialiser ma progression</button>
-            <button class="admin-btn btn-show" id="btnShowEggs">👁️ Afficher les œufs</button>
-            <button class="admin-btn btn-hide" id="btnHideEggs">🙈 Cacher les œufs</button>
+            <button class="admin-btn btn-reset" id="btnReset">🗑️ Réinitialiser MA progression</button>
+            <button class="admin-btn btn-show" id="btnShowEggs">👁️ Afficher les œufs (debug)</button>
+            <button class="admin-btn btn-hide" id="btnHideEggs">🙈 Cacher les œufs (debug)</button>
         </div>
 
-        <h3 class="section-title">⚠️ Zone dangereuse</h3>
-        <div class="admin-actions">
-            <button class="admin-btn btn-reset" id="btnResetLeaderboard">📉 Vider le classement</button>
-            <button class="admin-btn btn-resetall" id="btnResetAll">💣 Réinitialiser TOUT (classement + toutes les progressions)</button>
+        <div class="info-box">
+            ℹ️ Chaque joueur a un bouton <strong>"🔄 Recommencer la chasse"</strong> dans sa barre d'action une fois la chasse terminée. Le classement montre les joueurs connectés et proches.
         </div>
 
         <div class="confirm-box" id="confirmZone">
@@ -160,22 +171,6 @@
             </div>
         </div>
 
-        <div class="confirm-box" id="confirmLeaderboard">
-            <p>⚠️ Vider le classement pour TOUS les joueurs ?</p>
-            <div class="confirm-buttons">
-                <button class="btn-confirm-yes" id="btnConfirmLbYes">Oui, vider</button>
-                <button class="btn-confirm-no" id="btnConfirmLbNo">Annuler</button>
-            </div>
-        </div>
-
-        <div class="confirm-box" id="confirmResetAll">
-            <p>🚨 ATTENTION : Cela va supprimer le classement ET réinitialiser la progression de TOUS les joueurs ! Cette action est irréversible.</p>
-            <div class="confirm-buttons">
-                <button class="btn-confirm-yes" id="btnConfirmResetAllYes">Oui, tout réinitialiser</button>
-                <button class="btn-confirm-no" id="btnConfirmResetAllNo">Annuler</button>
-            </div>
-        </div>
-
         <div id="statusMessage"></div>
 
         <button class="admin-btn btn-close" id="btnClose">Fermer</button>
@@ -183,32 +178,54 @@
 
     <script src="https://play.workadventu.re/iframe_api.js"></script>
     <script>
-        // Envoie une commande au script principal via WA.player.state
-        function sendAdminCommand(action) {
-            WA.player.state.adminCommand = action + ':' + Date.now();
-            console.info('Admin: sent command', action);
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         WA.onInit().then(function() {
-            // Lire l'état depuis player.state (fiable dans iframe)
+            // Ma progression
             var started = WA.player.state.easterHuntStarted === true;
             var completed = WA.player.state.easterCompleted === true;
-            var huntActive = WA.player.state.adminHuntActive !== false;
             var progress = WA.player.state.easterProgress || {};
             var count = Object.values(progress).filter(Boolean).length;
 
-            // Compter les joueurs dans le classement via le cache
-            var lbCount = 0;
-            try {
-                var raw = WA.player.state.leaderboardCache || '{}';
-                var lb = JSON.parse(raw);
-                lbCount = Object.keys(lb).length;
-            } catch(e) {}
-
-            document.getElementById('statusActive').textContent = huntActive ? 'Oui \u2705' : 'Non \u274C';
-            document.getElementById('statusStarted').textContent = started ? (completed ? 'Termin\u00e9e \u2705' : 'En cours \u{1F3C3}') : 'Pas commenc\u00e9e';
+            document.getElementById('statusStarted').textContent =
+                completed ? 'Termin\u00e9e \u2705' : (started ? 'En cours \u{1F3C3}' : 'Pas commenc\u00e9e');
             document.getElementById('statusEggs').textContent = count + ' / 4';
-            document.getElementById('statusLb').textContent = lbCount + ' joueur(s)';
+
+            // Lister les joueurs proches
+            WA.players.configureTracking({ players: true }).then(function() {
+                var list = document.getElementById('playersList');
+                var items = [];
+
+                // Moi
+                var myName = WA.player.name || 'Moi';
+                var myScore = WA.player.state.easterScore || 0;
+                items.push('<li><span>' + escapeHtml(myName) + ' (toi)</span><span style="color:#ffd54f">' + myScore + '/4 \u{1F95A}</span></li>');
+
+                // Autres joueurs proches
+                try {
+                    var players = WA.players.list();
+                    for (var it = players.next(); !it.done; it = players.next()) {
+                        var p = it.value;
+                        var pName = String(p.state.easterPlayerName || p.name || 'Joueur');
+                        var pScore = typeof p.state.easterScore === 'number' ? p.state.easterScore : 0;
+                        items.push('<li><span>' + escapeHtml(pName) + '</span><span style="color:#ffd54f">' + pScore + '/4 \u{1F95A}</span></li>');
+                    }
+                } catch(e) {
+                    console.warn('Admin: list players failed', e);
+                }
+
+                if (items.length === 1) {
+                    items.push('<li style="color:rgba(255,255,255,0.4);font-style:italic">Aucun autre joueur \u00e0 proximit\u00e9</li>');
+                }
+
+                list.innerHTML = items.join('');
+            }).catch(function() {
+                document.getElementById('playersList').innerHTML = '<li>Impossible de charger</li>';
+            });
         });
 
         function showMessage(text, color) {
@@ -218,20 +235,6 @@
             msg.style.background = color;
             setTimeout(function() { msg.style.display = 'none'; }, 4000);
         }
-
-        // Activer la chasse
-        document.getElementById('btnActivate').addEventListener('click', function() {
-            sendAdminCommand('activateHunt');
-            document.getElementById('statusActive').textContent = 'Oui \u2705';
-            showMessage('\u2705 Chasse activ\u00e9e ! Les joueurs peuvent chercher les \u0153ufs.', 'rgba(76, 175, 80, 0.3)');
-        });
-
-        // Désactiver la chasse
-        document.getElementById('btnDeactivate').addEventListener('click', function() {
-            sendAdminCommand('deactivateHunt');
-            document.getElementById('statusActive').textContent = 'Non \u274C';
-            showMessage('\u26d4 Chasse d\u00e9sactiv\u00e9e. Plus personne ne peut chercher.', 'rgba(245, 124, 0, 0.3)');
-        });
 
         // Réinitialiser ma progression
         document.getElementById('btnReset').addEventListener('click', function() {
@@ -244,7 +247,9 @@
             WA.player.state.easterHuntStarted = false;
             WA.player.state.easterCompleted = false;
             WA.player.state.easterScore = 0;
-            showMessage('\u2705 Ta progression a \u00e9t\u00e9 r\u00e9initialis\u00e9e ! Recharge la page.', 'rgba(76, 175, 80, 0.3)');
+            WA.player.state.easterPlayerName = '';
+            WA.player.state.easterHuntDisabled = false;
+            showMessage('\u2705 Progression r\u00e9initialis\u00e9e ! Recharge la page (F5).', 'rgba(76, 175, 80, 0.3)');
             document.getElementById('statusStarted').textContent = 'Pas commenc\u00e9e';
             document.getElementById('statusEggs').textContent = '0 / 4';
         });
@@ -253,45 +258,15 @@
             document.getElementById('confirmZone').style.display = 'none';
         });
 
-        // Afficher/cacher les œufs
+        // Afficher/cacher les œufs (debug)
         document.getElementById('btnShowEggs').addEventListener('click', function() {
             WA.room.showLayer('EasterEggs');
-            showMessage('\u{1F441}\uFE0F Les \u0153ufs sont maintenant visibles.', 'rgba(67, 160, 71, 0.3)');
+            showMessage('\u{1F441}\uFE0F \u0152ufs visibles.', 'rgba(67, 160, 71, 0.3)');
         });
 
         document.getElementById('btnHideEggs').addEventListener('click', function() {
             WA.room.hideLayer('EasterEggs');
-            showMessage('\u{1F648} Les \u0153ufs sont maintenant cach\u00e9s.', 'rgba(245, 124, 0, 0.3)');
-        });
-
-        // Vider le classement
-        document.getElementById('btnResetLeaderboard').addEventListener('click', function() {
-            document.getElementById('confirmLeaderboard').style.display = 'block';
-        });
-        document.getElementById('btnConfirmLbYes').addEventListener('click', function() {
-            document.getElementById('confirmLeaderboard').style.display = 'none';
-            sendAdminCommand('resetLeaderboard');
-            showMessage('\u2705 Classement vid\u00e9 !', 'rgba(76, 175, 80, 0.3)');
-            document.getElementById('statusLb').textContent = '0 joueur(s)';
-        });
-        document.getElementById('btnConfirmLbNo').addEventListener('click', function() {
-            document.getElementById('confirmLeaderboard').style.display = 'none';
-        });
-
-        // Réinitialiser TOUT
-        document.getElementById('btnResetAll').addEventListener('click', function() {
-            document.getElementById('confirmResetAll').style.display = 'block';
-        });
-        document.getElementById('btnConfirmResetAllYes').addEventListener('click', function() {
-            document.getElementById('confirmResetAll').style.display = 'none';
-            sendAdminCommand('resetAll');
-            showMessage('\u{1F4A3} Tout a \u00e9t\u00e9 r\u00e9initialis\u00e9 ! Tous les joueurs doivent recharger la page.', 'rgba(183, 28, 28, 0.3)');
-            document.getElementById('statusLb').textContent = '0 joueur(s)';
-            document.getElementById('statusStarted').textContent = 'Pas commenc\u00e9e';
-            document.getElementById('statusEggs').textContent = '0 / 4';
-        });
-        document.getElementById('btnConfirmResetAllNo').addEventListener('click', function() {
-            document.getElementById('confirmResetAll').style.display = 'none';
+            showMessage('\u{1F648} \u0152ufs cach\u00e9s.', 'rgba(245, 124, 0, 0.3)');
         });
 
         // Fermer
