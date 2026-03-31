@@ -42,7 +42,7 @@ export const VICTORY_MESSAGE = "Tu as trouvé tous les œufs de Pâques ! Tu es 
 
 // Zones de téléportation anti-triche dans le labyrinthe
 // Nombre de zones "easterTeleport1", "easterTeleport2"... dans Tiled
-export const TOTAL_TELEPORTS = 0; // ← Change ce nombre quand tu ajoutes des zones dans Tiled
+export const TOTAL_TELEPORTS = 2; // ← Change ce nombre quand tu ajoutes des zones dans Tiled
 // Coordonnées du point de départ (en pixels Tiled)
 export const TELEPORT_START_X = 2722;
 export const TELEPORT_START_Y = 2782;
