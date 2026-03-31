@@ -8,6 +8,9 @@ import {
     CLUES,
     TOTAL_TRAPS,
     TRAP_DURATION,
+    TOTAL_TELEPORTS,
+    TELEPORT_START_X,
+    TELEPORT_START_Y,
 } from "./constants";
 
 console.info("Easter: module loaded");
@@ -22,6 +25,12 @@ for (let i = 1; i <= TOTAL_EGGS; i++) {
 const easterTrapAreas: string[] = [];
 for (let i = 1; i <= TOTAL_TRAPS; i++) {
     easterTrapAreas.push(`easterTrap${i}`);
+}
+
+// Noms des zones de téléportation : easterTeleport1, easterTeleport2, ...
+const easterTeleportAreas: string[] = [];
+for (let i = 1; i <= TOTAL_TELEPORTS; i++) {
+    easterTeleportAreas.push(`easterTeleport${i}`);
 }
 
 // Progression du joueur
@@ -135,6 +144,17 @@ function setupTrapListeners() {
             const alreadyTriggered = (WA.player.state.easterTrapsTriggered as string[]) ?? [];
             if (alreadyTriggered.includes(trapName)) return;
             triggerTrap(trapName);
+        });
+    }
+}
+
+// Zones de téléportation anti-triche (labyrinthe)
+function setupTeleportTraps() {
+    for (const areaName of easterTeleportAreas) {
+        WA.room.area.onEnter(areaName).subscribe(() => {
+            if (huntPaused || isSick) return;
+            console.info("Easter: teleport trap triggered!", areaName);
+            WA.player.moveTo(TELEPORT_START_X, TELEPORT_START_Y, 1000);
         });
     }
 }
@@ -382,6 +402,7 @@ WA.onInit().then(() => {
         });
         setupEggListeners(progress, root);
         setupTrapListeners();
+        setupTeleportTraps();
         startClues(progress);
         setupLeaderboard(root);
         setupAdminButton(root);
@@ -487,6 +508,7 @@ function startHunt(progress: EasterProgress, root: string) {
 
     setupEggListeners(progress, root);
     setupTrapListeners();
+    setupTeleportTraps();
     startClues(progress);
 }
 

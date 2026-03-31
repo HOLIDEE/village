@@ -40,6 +40,13 @@ export const WELCOME_MESSAGE = "Des œufs sont cachés partout sur la carte ! Ex
 export const VICTORY_TITLE = "🎉 Félicitations ! 🎉";
 export const VICTORY_MESSAGE = "Tu as trouvé tous les œufs de Pâques ! Tu es le champion de la chasse aux œufs !";
 
+// Zones de téléportation anti-triche dans le labyrinthe
+// Nombre de zones "easterTeleport1", "easterTeleport2"... dans Tiled
+export const TOTAL_TELEPORTS = 0; // ← Change ce nombre quand tu ajoutes des zones dans Tiled
+// Coordonnées du point de départ (en pixels Tiled)
+export const TELEPORT_START_X = 2722;
+export const TELEPORT_START_Y = 2782;
+
 // Délai entre les indices (en millisecondes) - 60 secondes
 export const CLUE_TIMEOUT = 60000;
 
