@@ -161,7 +161,7 @@
 
         <h3 class="section-title">⚠️ Zone dangereuse</h3>
         <div class="admin-actions">
-            <button class="admin-btn btn-resetall" id="btnResetLeaderboard">💣 Vider le classement</button>
+            <button class="admin-btn btn-resetall" id="btnResetAll">💣 Tout réinitialiser (pour TOUS)</button>
         </div>
 
         <div class="confirm-box" id="confirmReset">
@@ -172,11 +172,11 @@
             </div>
         </div>
 
-        <div class="confirm-box" id="confirmLeaderboard">
-            <p>🚨 Vider le classement de TOUS les joueurs ? Cette action est irréversible.</p>
+        <div class="confirm-box" id="confirmResetAll">
+            <p>🚨 Réinitialiser la chasse pour TOUS les joueurs ? Le classement sera vidé et tout le monde repartira de zéro.</p>
             <div class="confirm-buttons">
-                <button class="btn-confirm-yes" id="btnConfirmLbYes">Oui, vider</button>
-                <button class="btn-confirm-no" id="btnConfirmLbNo">Annuler</button>
+                <button class="btn-confirm-yes" id="btnConfirmResetAllYes">Oui, tout réinitialiser</button>
+                <button class="btn-confirm-no" id="btnConfirmResetAllNo">Annuler</button>
             </div>
         </div>
 
@@ -314,18 +314,22 @@
             document.getElementById('confirmReset').style.display = 'none';
         });
 
-        // Vider le classement
-        document.getElementById('btnResetLeaderboard').addEventListener('click', function() {
-            document.getElementById('confirmLeaderboard').style.display = 'block';
+        // Tout réinitialiser (pour tous)
+        document.getElementById('btnResetAll').addEventListener('click', function() {
+            document.getElementById('confirmResetAll').style.display = 'block';
         });
-        document.getElementById('btnConfirmLbYes').addEventListener('click', function() {
-            document.getElementById('confirmLeaderboard').style.display = 'none';
+        document.getElementById('btnConfirmResetAllYes').addEventListener('click', function() {
+            document.getElementById('confirmResetAll').style.display = 'none';
+            // Vider le classement
             WA.state.easterLeaderboard = '{}';
-            showMessage('\u{1F4A3} Classement vid\u00e9 !', 'rgba(183, 28, 28, 0.3)');
+            // Incrémenter la version de reset pour déclencher le reset chez tous les joueurs
+            var currentVersion = WA.state.easterResetVersion || 0;
+            WA.state.easterResetVersion = (typeof currentVersion === 'number' ? currentVersion : 0) + 1;
+            showMessage('\u{1F4A3} Chasse r\u00e9initialis\u00e9e pour tous ! Les joueurs verront un message.', 'rgba(183, 28, 28, 0.3)');
             renderLeaderboard('{}');
         });
-        document.getElementById('btnConfirmLbNo').addEventListener('click', function() {
-            document.getElementById('confirmLeaderboard').style.display = 'none';
+        document.getElementById('btnConfirmResetAllNo').addEventListener('click', function() {
+            document.getElementById('confirmResetAll').style.display = 'none';
         });
 
         // Fermer
