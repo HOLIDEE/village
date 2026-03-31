@@ -8,6 +8,13 @@
 // "easterEgg1", "easterEgg2", etc. créées dans Tiled
 export const TOTAL_EGGS = 4;
 
+// Nombre de pièges (œufs cassés)
+// Doit correspondre aux zones "easterTrap1", "easterTrap2"... dans Tiled
+export const TOTAL_TRAPS = 0;
+
+// Durée de la maladie en secondes
+export const TRAP_DURATION = 15;
+
 // Nom du layer Tiled qui contient les images d'œufs (calque d'objets, initialement caché)
 export const EGGS_LAYER = "EasterEggs";
 

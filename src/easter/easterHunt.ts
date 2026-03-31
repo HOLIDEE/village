@@ -6,6 +6,8 @@ import {
     EGG_FOUND_MESSAGES,
     CLUE_TIMEOUT,
     CLUES,
+    TOTAL_TRAPS,
+    TRAP_DURATION,
 } from "./constants";
 
 console.info("Easter: module loaded");
@@ -14,6 +16,12 @@ console.info("Easter: module loaded");
 const easterEggAreas: string[] = [];
 for (let i = 1; i <= TOTAL_EGGS; i++) {
     easterEggAreas.push(`easterEggs${i}`);
+}
+
+// Noms des pièges : easterTrap1, easterTrap2, ...
+const easterTrapAreas: string[] = [];
+for (let i = 1; i <= TOTAL_TRAPS; i++) {
+    easterTrapAreas.push(`easterTrap${i}`);
 }
 
 // Progression du joueur
@@ -33,6 +41,7 @@ let timeoutClue: ReturnType<typeof setTimeout> | undefined;
 let timeoutClueRegularly: ReturnType<typeof setInterval> | undefined;
 let huntStarted = false;
 let huntPaused = false; // true quand l'admin a désactivé la chasse
+let isSick = false; // true quand le joueur est "malade" (piège)
 
 function getFoundCount(progress: EasterProgress): number {
     return Object.values(progress).filter(Boolean).length;
@@ -54,6 +63,79 @@ async function hideEggObject(areaName: string) {
 function hideFoundEggs(progress: EasterProgress) {
     for (const [areaName, found] of Object.entries(progress)) {
         if (found) hideEggObject(areaName);
+    }
+}
+
+// Cacher les pièges déjà déclenchés
+function hideTriggeredTraps() {
+    try {
+        const triggered = (WA.player.state.easterTrapsTriggered as string[]) ?? [];
+        for (const trapName of triggered) {
+            hideEggObject(trapName);
+        }
+    } catch (_e) { /* */ }
+}
+
+// Rendre le joueur "malade" pendant TRAP_DURATION secondes
+function triggerTrap(trapName: string) {
+    if (isSick) return; // déjà malade, on n'empile pas
+    isSick = true;
+    console.info("Easter: trap triggered!", trapName);
+
+    // Sauvegarder le piège comme déclenché
+    try {
+        const triggered = (WA.player.state.easterTrapsTriggered as string[]) ?? [];
+        if (!triggered.includes(trapName)) {
+            triggered.push(trapName);
+            WA.player.state.easterTrapsTriggered = [...triggered];
+        }
+    } catch (_e) { /* */ }
+
+    // Supprimer visuellement le piège
+    hideEggObject(trapName);
+
+    // Bloquer le joueur
+    try { WA.controls.disablePlayerControls(); } catch (_e) { /* */ }
+
+    // Contour vert poison
+    try { WA.player.setOutlineColor(0, 200, 0); } catch (_e) { /* */ }
+
+    WA.ui.banner.openBanner({
+        id: "easter-trap",
+        text: `🤢 Beurk ! Un chocolat périmé ! Tu es malade pendant ${TRAP_DURATION} secondes...`,
+        bgColor: "#4a148c",
+        textColor: "#ffffff",
+        closable: false,
+        timeToClose: TRAP_DURATION * 1000,
+    });
+
+    setTimeout(() => {
+        isSick = false;
+        try { WA.controls.restorePlayerControls(); } catch (_e) { /* */ }
+        try { WA.player.removeOutlineColor(); } catch (_e) { /* */ }
+        WA.ui.banner.openBanner({
+            id: "easter-trap",
+            text: "😮‍💨 Ouf, ça va mieux ! Continue la chasse ! 🐰",
+            bgColor: "#4CAF50",
+            textColor: "#ffffff",
+            closable: true,
+            timeToClose: 4000,
+        });
+    }, TRAP_DURATION * 1000);
+}
+
+// Setup des pièges
+function setupTrapListeners() {
+    for (const trapName of easterTrapAreas) {
+        const triggered = (WA.player.state.easterTrapsTriggered as string[]) ?? [];
+        if (triggered.includes(trapName)) continue;
+
+        WA.room.area.onEnter(trapName).subscribe(() => {
+            if (huntPaused || isSick) return;
+            const alreadyTriggered = (WA.player.state.easterTrapsTriggered as string[]) ?? [];
+            if (alreadyTriggered.includes(trapName)) return;
+            triggerTrap(trapName);
+        });
     }
 }
 
@@ -230,6 +312,7 @@ WA.onInit().then(() => {
             WA.player.state.easterScore = 0;
             WA.player.state.easterPlayerName = "";
             WA.player.state.easterResetVersion = serverVersion;
+            WA.player.state.easterTrapsTriggered = [];
             progress = buildDefaultProgress();
         }
     } catch (_e) { /* */ }
@@ -244,6 +327,7 @@ WA.onInit().then(() => {
             WA.player.state.easterScore = 0;
             WA.player.state.easterPlayerName = "";
             WA.player.state.easterResetVersion = _value;
+            WA.player.state.easterTrapsTriggered = [];
             huntStarted = false;
             WA.room.hideLayer(EGGS_LAYER);
             WA.ui.banner.openBanner({
@@ -271,6 +355,7 @@ WA.onInit().then(() => {
             WA.room.showLayer(EGGS_LAYER);
         }
         hideFoundEggs(progress);
+        hideTriggeredTraps();
         WA.ui.banner.openBanner({
             id: "easter-banner",
             text: `🎉 Chasse terminée ! Tu as trouvé ${count}/${TOTAL_EGGS} œufs !`,
@@ -293,6 +378,7 @@ WA.onInit().then(() => {
             WA.room.showLayer(EGGS_LAYER);
         }
         hideFoundEggs(progress);
+        hideTriggeredTraps();
         WA.ui.banner.openBanner({
             id: "easter-banner",
             text: `🥚 Chasse en cours : ${count}/${TOTAL_EGGS} œufs trouvés`,
@@ -302,6 +388,7 @@ WA.onInit().then(() => {
             timeToClose: 5000,
         });
         setupEggListeners(progress, root);
+        setupTrapListeners();
         startClues(progress);
         setupLeaderboard(root);
         setupAdminButton(root);
@@ -407,6 +494,7 @@ function startHunt(progress: EasterProgress, root: string) {
     });
 
     setupEggListeners(progress, root);
+    setupTrapListeners();
     startClues(progress);
 }
 
