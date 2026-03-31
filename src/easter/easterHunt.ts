@@ -6,15 +6,14 @@ import {
     EGG_FOUND_MESSAGES,
     CLUE_TIMEOUT,
     CLUES,
-    EGG_TILE_POSITIONS,
 } from "./constants";
 
 console.info("Easter: module loaded");
 
-// Noms des zones d'œufs : easterEgg1, easterEgg2, ...
+// Noms des zones d'œufs : easterEggs1, easterEggs2, ...
 const easterEggAreas: string[] = [];
 for (let i = 1; i <= TOTAL_EGGS; i++) {
-    easterEggAreas.push(`easterEgg${i}`);
+    easterEggAreas.push(`easterEggs${i}`);
 }
 
 // Progression du joueur
@@ -25,7 +24,7 @@ interface EasterProgress {
 function buildDefaultProgress(): EasterProgress {
     const progress: EasterProgress = {};
     for (let i = 1; i <= TOTAL_EGGS; i++) {
-        progress[`easterEgg${i}`] = false;
+        progress[`easterEggs${i}`] = false;
     }
     return progress;
 }
@@ -43,21 +42,22 @@ function getRandomMessage(): string {
     return EGG_FOUND_MESSAGES[Math.floor(Math.random() * EGG_FOUND_MESSAGES.length)];
 }
 
-function hideEggTile(areaName: string) {
-    const pos = EGG_TILE_POSITIONS[areaName];
-    if (!pos) return;
+// Supprimer un œuf individuellement (local au joueur)
+async function hideEggObject(areaName: string) {
     try {
-        WA.room.setTiles([{ x: pos.x, y: pos.y, tile: null, layer: EGGS_LAYER }]);
+        await WA.room.area.delete(areaName);
     } catch (e) {
-        console.warn("Easter: hideEggTile error", e);
+        console.warn("Easter: hideEggObject error", areaName, e);
     }
 }
 
 function hideFoundEggs(progress: EasterProgress) {
     for (const [areaName, found] of Object.entries(progress)) {
-        if (found) hideEggTile(areaName);
+        if (found) hideEggObject(areaName);
     }
 }
+
+
 
 // Sons
 let eggSound: any;
@@ -205,8 +205,6 @@ WA.onInit().then(() => {
                 // Ré-afficher les œufs pour les joueurs en cours de chasse
                 if (huntStarted || WA.player.state.easterCompleted === true) {
                     WA.room.showLayer(EGGS_LAYER);
-                    const p = (WA.player.state.easterProgress as EasterProgress) ?? buildDefaultProgress();
-                    hideFoundEggs(p);
                 }
                 WA.ui.banner.openBanner({
                     id: "easter-banner",
@@ -217,6 +215,45 @@ WA.onInit().then(() => {
                     timeToClose: 8000,
                 });
             }
+        });
+    } catch (_e) { /* */ }
+
+    // Vérifier si un reset global a eu lieu depuis la dernière visite
+    try {
+        const serverVersion = (WA.state as any).easterResetVersion ?? 0;
+        const localVersion = WA.player.state.easterResetVersion ?? 0;
+        if (typeof serverVersion === "number" && serverVersion > (localVersion as number)) {
+            console.info("Easter: global reset detected, clearing local progress");
+            WA.player.state.easterProgress = null;
+            WA.player.state.easterHuntStarted = false;
+            WA.player.state.easterCompleted = false;
+            WA.player.state.easterScore = 0;
+            WA.player.state.easterPlayerName = "";
+            WA.player.state.easterResetVersion = serverVersion;
+            progress = buildDefaultProgress();
+        }
+    } catch (_e) { /* */ }
+
+    // Écouter un reset global en temps réel
+    try {
+        WA.state.onVariableChange("easterResetVersion").subscribe((_value: unknown) => {
+            console.info("Easter: global reset received live!");
+            WA.player.state.easterProgress = null;
+            WA.player.state.easterHuntStarted = false;
+            WA.player.state.easterCompleted = false;
+            WA.player.state.easterScore = 0;
+            WA.player.state.easterPlayerName = "";
+            WA.player.state.easterResetVersion = _value;
+            huntStarted = false;
+            WA.room.hideLayer(EGGS_LAYER);
+            WA.ui.banner.openBanner({
+                id: "easter-banner",
+                text: "🔄 La chasse aux œufs a été réinitialisée ! Recharge la page (F5) pour repartir de zéro.",
+                bgColor: "#2196F3",
+                textColor: "#ffffff",
+                closable: true,
+                timeToClose: 30000,
+            });
         });
     } catch (_e) { /* */ }
 
@@ -232,8 +269,8 @@ WA.onInit().then(() => {
         console.info("Easter: already completed");
         if (!huntPaused) {
             WA.room.showLayer(EGGS_LAYER);
-            hideFoundEggs(progress);
         }
+        hideFoundEggs(progress);
         WA.ui.banner.openBanner({
             id: "easter-banner",
             text: `🎉 Chasse terminée ! Tu as trouvé ${count}/${TOTAL_EGGS} œufs !`,
@@ -254,8 +291,8 @@ WA.onInit().then(() => {
         huntStarted = true;
         if (!huntPaused) {
             WA.room.showLayer(EGGS_LAYER);
-            hideFoundEggs(progress);
         }
+        hideFoundEggs(progress);
         WA.ui.banner.openBanner({
             id: "easter-banner",
             text: `🥚 Chasse en cours : ${count}/${TOTAL_EGGS} œufs trouvés`,
@@ -358,7 +395,6 @@ function startHunt(progress: EasterProgress, root: string) {
     try { WA.player.state.easterHuntStarted = true; } catch (_e) { /* */ }
 
     WA.room.showLayer(EGGS_LAYER);
-    hideFoundEggs(progress);
     setupLeaderboard(root);
 
     WA.ui.banner.openBanner({
@@ -401,7 +437,7 @@ function setupEggListeners(progress: EasterProgress, root: string) {
             WA.player.state.easterProgress = { ...currentProgress };
 
             playEggSound();
-            hideEggTile(areaName);
+            hideEggObject(areaName);
 
             const count = getFoundCount(currentProgress);
             updatePublicScore(count);
