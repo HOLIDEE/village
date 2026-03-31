@@ -10,7 +10,8 @@ import {
     TOTAL_TELEPORTS,
     TELEPORT_START_X,
     TELEPORT_START_Y,
-    EGG_VISUALS,
+    EGG_VISUALS_LAYER,
+    EGG_TILE_POSITIONS,
 } from "./constants";
 
 console.info("Easter: module loaded");
@@ -52,50 +53,26 @@ let huntStarted = false;
 let huntPaused = false; // true quand l'admin a désactivé la chasse
 let isSick = false; // true quand le joueur est "malade" (piège)
 
-// Stocke les visuels d'œufs créés via EmbeddedWebsite
-const eggWebsites = new Map<string, any>();
-
-function createEggVisuals(progress: EasterProgress, root: string) {
-    for (const areaName of easterEggAreas) {
-        if (progress[areaName]) continue; // déjà trouvé
-        const data = EGG_VISUALS[areaName];
-        if (!data) continue;
-        const websiteName = `${areaName}-visual`;
-        try {
-            const site = WA.room.website.create({
-                name: websiteName,
-                url: `${root}/easter/egg-tile.html?tile=${data.tileIndex}`,
-                position: {
-                    x: data.x,
-                    y: data.y,
-                    width: 32,
-                    height: 32,
-                },
-                visible: !huntPaused,
-                origin: "map",
-                scale: 1,
-            });
-            eggWebsites.set(areaName, site);
-        } catch (e) {
-            console.warn("Easter: createEggVisual error", areaName, e);
-        }
-    }
-}
-
-function removeEggVisual(areaName: string) {
-    const websiteName = `${areaName}-visual`;
+// Effacer le visuel d'un œuf sur le calque de tiles
+function removeEggTile(areaName: string) {
+    const pos = EGG_TILE_POSITIONS[areaName];
+    if (!pos) return;
     try {
-        eggWebsites.delete(areaName);
-        WA.room.website.delete(websiteName);
+        WA.room.setTiles([{ x: pos.tileX, y: pos.tileY, tile: null, layer: EGG_VISUALS_LAYER }]);
     } catch (e) {
-        console.warn("Easter: removeEggVisual error", areaName, e);
+        console.warn("Easter: removeEggTile error", areaName, e);
     }
 }
 
+// Masquer/afficher le calque entier des visuels d'œufs
 function setEggVisualsVisible(visible: boolean) {
-    for (const [, site] of eggWebsites) {
-        try { site.visible = visible; } catch (_e) { /* */ }
-    }
+    try {
+        if (visible) {
+            WA.room.showLayer(EGG_VISUALS_LAYER);
+        } else {
+            WA.room.hideLayer(EGG_VISUALS_LAYER);
+        }
+    } catch (_e) { /* */ }
 }
 
 function getFoundCount(progress: EasterProgress): number {
@@ -106,14 +83,14 @@ function getRandomMessage(): string {
     return EGG_FOUND_MESSAGES[Math.floor(Math.random() * EGG_FOUND_MESSAGES.length)];
 }
 
-// Supprimer un œuf individuellement (local au joueur)
+// Supprimer un œuf individuellement (zone + visuel)
 async function hideEggObject(areaName: string) {
     try {
         await WA.room.area.delete(areaName);
     } catch (e) {
         console.warn("Easter: hideEggObject error", areaName, e);
     }
-    removeEggVisual(areaName);
+    removeEggTile(areaName);
 }
 
 function hideFoundEggs(progress: EasterProgress) {
@@ -431,7 +408,6 @@ WA.onInit().then(() => {
     if (wasStarted) {
         console.info("Easter: resuming hunt");
         huntStarted = true;
-        createEggVisuals(progress, root);
         hideFoundEggs(progress);
         hideTriggeredTraps();
         WA.ui.banner.openBanner({
@@ -538,7 +514,6 @@ function startHunt(progress: EasterProgress, root: string) {
     try { WA.player.state.easterHuntStarted = true; } catch (_e) { /* */ }
 
     setupLeaderboard(root);
-    createEggVisuals(progress, root);
 
     WA.ui.banner.openBanner({
         id: "easter-banner",
