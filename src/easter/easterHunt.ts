@@ -218,13 +218,6 @@ WA.onInit().then(() => {
     const mapUrl = WA.room.mapURL;
     console.info("Easter: WA.onInit OK, map =", mapUrl);
 
-    // Cacher les œufs au démarrage
-    try {
-        WA.room.hideLayer(EGGS_LAYER);
-    } catch (e) {
-        console.warn("Easter: hideLayer failed", e);
-    }
-
     const root = mapUrl.substring(0, mapUrl.lastIndexOf("/"));
 
     // Charger les sons
@@ -351,8 +344,8 @@ WA.onInit().then(() => {
 
     if (isCompleted) {
         console.info("Easter: already completed");
-        if (!huntPaused) {
-            WA.room.showLayer(EGGS_LAYER);
+        if (huntPaused) {
+            WA.room.hideLayer(EGGS_LAYER);
         }
         hideFoundEggs(progress);
         hideTriggeredTraps();
@@ -374,8 +367,8 @@ WA.onInit().then(() => {
     if (wasStarted) {
         console.info("Easter: resuming hunt");
         huntStarted = true;
-        if (!huntPaused) {
-            WA.room.showLayer(EGGS_LAYER);
+        if (huntPaused) {
+            WA.room.hideLayer(EGGS_LAYER);
         }
         hideFoundEggs(progress);
         hideTriggeredTraps();
@@ -481,7 +474,6 @@ function startHunt(progress: EasterProgress, root: string) {
 
     try { WA.player.state.easterHuntStarted = true; } catch (_e) { /* */ }
 
-    WA.room.showLayer(EGGS_LAYER);
     setupLeaderboard(root);
 
     WA.ui.banner.openBanner({
