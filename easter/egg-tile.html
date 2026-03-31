@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; background: transparent; }
+  .tile {
+    width: 32px;
+    height: 32px;
+    background-image: url('./Easter.png');
+    background-repeat: no-repeat;
+  }
+</style>
+</head>
+<body>
+<div class="tile" id="tile"></div>
+<script>
+  var params = new URLSearchParams(window.location.search);
+  var tileIndex = parseInt(params.get('tile') || '0', 10);
+  var cols = 31;
+  var col = tileIndex % cols;
+  var row = Math.floor(tileIndex / cols);
+  document.getElementById('tile').style.backgroundPosition =
+    '-' + (col * 32) + 'px -' + (row * 32) + 'px';
+</script>
+</body>
+</html>
