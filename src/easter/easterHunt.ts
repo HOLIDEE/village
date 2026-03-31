@@ -2,7 +2,6 @@
 
 import {
     TOTAL_EGGS,
-    EGGS_LAYER,
     EGG_FOUND_MESSAGES,
     CLUE_TIMEOUT,
     CLUES,
@@ -11,6 +10,7 @@ import {
     TOTAL_TELEPORTS,
     TELEPORT_START_X,
     TELEPORT_START_Y,
+    EGG_VISUALS,
 } from "./constants";
 
 console.info("Easter: module loaded");
@@ -52,6 +52,52 @@ let huntStarted = false;
 let huntPaused = false; // true quand l'admin a désactivé la chasse
 let isSick = false; // true quand le joueur est "malade" (piège)
 
+// Stocke les visuels d'œufs créés via EmbeddedWebsite
+const eggWebsites = new Map<string, any>();
+
+function createEggVisuals(progress: EasterProgress, root: string) {
+    for (const areaName of easterEggAreas) {
+        if (progress[areaName]) continue; // déjà trouvé
+        const data = EGG_VISUALS[areaName];
+        if (!data) continue;
+        const websiteName = `${areaName}-visual`;
+        try {
+            const site = WA.room.website.create({
+                name: websiteName,
+                url: `${root}/easter/egg-tile.html?tile=${data.tileIndex}`,
+                position: {
+                    x: data.x,
+                    y: data.y,
+                    width: 32,
+                    height: 32,
+                },
+                visible: !huntPaused,
+                origin: "map",
+                scale: 1,
+            });
+            eggWebsites.set(areaName, site);
+        } catch (e) {
+            console.warn("Easter: createEggVisual error", areaName, e);
+        }
+    }
+}
+
+function removeEggVisual(areaName: string) {
+    const websiteName = `${areaName}-visual`;
+    try {
+        eggWebsites.delete(areaName);
+        WA.room.website.delete(websiteName);
+    } catch (e) {
+        console.warn("Easter: removeEggVisual error", areaName, e);
+    }
+}
+
+function setEggVisualsVisible(visible: boolean) {
+    for (const [, site] of eggWebsites) {
+        try { site.visible = visible; } catch (_e) { /* */ }
+    }
+}
+
 function getFoundCount(progress: EasterProgress): number {
     return Object.values(progress).filter(Boolean).length;
 }
@@ -67,6 +113,7 @@ async function hideEggObject(areaName: string) {
     } catch (e) {
         console.warn("Easter: hideEggObject error", areaName, e);
     }
+    removeEggVisual(areaName);
 }
 
 function hideFoundEggs(progress: EasterProgress) {
@@ -285,7 +332,7 @@ WA.onInit().then(() => {
             if (value === false) {
                 huntPaused = true;
                 console.info("Easter: hunt DISABLED by admin (live)");
-                WA.room.hideLayer(EGGS_LAYER);
+                setEggVisualsVisible(false);
                 WA.ui.banner.openBanner({
                     id: "easter-banner",
                     text: "⛔ La chasse aux œufs a été désactivée par un administrateur.",
@@ -299,7 +346,7 @@ WA.onInit().then(() => {
                 console.info("Easter: hunt ENABLED by admin (live)");
                 // Ré-afficher les œufs pour les joueurs en cours de chasse
                 if (huntStarted || WA.player.state.easterCompleted === true) {
-                    WA.room.showLayer(EGGS_LAYER);
+                    setEggVisualsVisible(true);
                 }
                 WA.ui.banner.openBanner({
                     id: "easter-banner",
@@ -342,7 +389,7 @@ WA.onInit().then(() => {
             WA.player.state.easterResetVersion = _value;
             WA.player.state.easterTrapsTriggered = [];
             huntStarted = false;
-            WA.room.hideLayer(EGGS_LAYER);
+            setEggVisualsVisible(false);
             WA.ui.banner.openBanner({
                 id: "easter-banner",
                 text: "🔄 La chasse aux œufs a été réinitialisée ! Recharge la page (F5) pour repartir de zéro.",
@@ -364,9 +411,6 @@ WA.onInit().then(() => {
 
     if (isCompleted) {
         console.info("Easter: already completed");
-        if (huntPaused) {
-            WA.room.hideLayer(EGGS_LAYER);
-        }
         hideFoundEggs(progress);
         hideTriggeredTraps();
         WA.ui.banner.openBanner({
@@ -387,9 +431,7 @@ WA.onInit().then(() => {
     if (wasStarted) {
         console.info("Easter: resuming hunt");
         huntStarted = true;
-        if (huntPaused) {
-            WA.room.hideLayer(EGGS_LAYER);
-        }
+        createEggVisuals(progress, root);
         hideFoundEggs(progress);
         hideTriggeredTraps();
         WA.ui.banner.openBanner({
@@ -496,6 +538,7 @@ function startHunt(progress: EasterProgress, root: string) {
     try { WA.player.state.easterHuntStarted = true; } catch (_e) { /* */ }
 
     setupLeaderboard(root);
+    createEggVisuals(progress, root);
 
     WA.ui.banner.openBanner({
         id: "easter-banner",
