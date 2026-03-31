@@ -599,18 +599,18 @@ function showProgress(_progress: EasterProgress, root: string) {
 
 function setupLeaderboard(root: string) {
     try {
-        WA.room.area.onEnter("leaderboard").subscribe(() => {
-            console.info("Easter: entered leaderboard zone");
-            WA.ui.modal.openModal({
-                title: "Classement",
-                src: `${root}/easter/leaderboard.html`,
-                allow: "microphone; camera",
-                allowApi: true,
-                position: "right",
-            });
-        });
-        WA.room.area.onLeave("leaderboard").subscribe(() => {
-            WA.ui.modal.closeModal();
+        WA.ui.actionBar.addButton({
+            id: "easter-leaderboard-btn",
+            label: "🏆 Classement",
+            callback: () => {
+                WA.ui.modal.openModal({
+                    title: "Classement",
+                    src: `${root}/easter/leaderboard.html`,
+                    allow: "microphone; camera",
+                    allowApi: true,
+                    position: "right",
+                });
+            },
         });
     } catch (e) {
         console.warn("Easter: leaderboard setup failed", e);
