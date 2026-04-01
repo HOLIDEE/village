@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lancer la chasse</title>
+    
+  <link rel="stylesheet" href="../assets/css-c8c9743b.css">
+</head>
+<body>
+    <div class="container">
+        <div class="emoji-header">🐰 ⏱️ 🥚</div>
+        <h1>Prêt(e) à chasser ?</h1>
+        <p>En cliquant sur <strong>"C'est parti"</strong>, le chronomètre démarre immédiatement.</p>
+        <p>Tu ne pourras <strong>pas recommencer</strong> — alors prends ton temps pour bien explorer chaque recoin !</p>
+
+        <ul class="rules">
+            <li>🥚 36 œufs sont cachés sur la carte</li>
+            <li>⏱️ Ton temps sera enregistré au classement</li>
+            <li>⚠️ Attention aux chocolats périmés !</li>
+        </ul>
+
+        <button class="btn btn-start" id="goButton">C'est parti ! 🚀</button>
+        <button class="btn btn-close" id="cancelButton" style="margin-top: 10px;">Pas maintenant</button>
+    </div>
+
+    <script src="https://play.workadventu.re/iframe_api.js"></script>
+    <script>
+        WA.onInit().then(function() {
+            document.getElementById('goButton').addEventListener('click', function() {
+                WA.player.state.easterLaunchConfirmed = true;
+                WA.ui.modal.closeModal();
+            });
+            document.getElementById('cancelButton').addEventListener('click', function() {
+                WA.player.state.easterLaunchConfirmed = false;
+                WA.ui.modal.closeModal();
+            });
+        });
+    </script>
+</body>
+</html>
