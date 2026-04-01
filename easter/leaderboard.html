@@ -134,13 +134,17 @@
                 if (lb.hasOwnProperty(name)) {
                     var entry = lb[name];
                     var score = (typeof entry === 'object' && entry !== null) ? (entry.score || 0) : (typeof entry === 'number' ? entry : 0);
-                    entries.push({ name: name, score: score });
+                    var time = (typeof entry === 'object' && entry !== null && entry.time) ? entry.time : null;
+                    entries.push({ name: name, score: score, time: time });
                 }
             }
 
-            // Trier par score décroissant, puis par nom
+            // Trier par score décroissant, puis par temps croissant
             entries.sort(function(a, b) {
                 if (b.score !== a.score) return b.score - a.score;
+                if (a.time && b.time) return a.time - b.time;
+                if (a.time) return -1;
+                if (b.time) return 1;
                 return a.name.localeCompare(b.name);
             });
 
@@ -158,10 +162,17 @@
                 var isMe = (p.name === myName);
                 if (isMe) cls += ' me';
                 var displayName = isMe ? p.name + ' (toi)' : p.name;
+                var timeStr = '';
+                if (p.time) {
+                    var h = Math.floor(p.time / 3600);
+                    var m = Math.floor((p.time % 3600) / 60);
+                    var s = p.time % 60;
+                    timeStr = h > 0 ? ' \u23F1\uFE0F ' + h + 'h' + ('0'+m).slice(-2) + 'm' : ' \u23F1\uFE0F ' + m + 'm' + ('0'+s).slice(-2) + 's';
+                }
                 return '<li class="' + cls.trim() + '">' +
                     '<span class="rank">' + rank + '</span>' +
                     '<span class="player-name">' + escapeHtml(displayName) + '</span>' +
-                    '<span class="score">' + p.score + '/24 \u{1F95A}</span>' +
+                    '<span class="score">' + p.score + '/36 \u{1F95A}' + timeStr + '</span>' +
                     '</li>';
             }).join('');
         }

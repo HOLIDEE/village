@@ -10,23 +10,24 @@
     <div class="container">
         <div class="emoji-header">🐰 🥚 🌷</div>
         <h1>Chasse aux Œufs de Pâques !</h1>
-        <p>Bienvenue dans la grande chasse aux œufs ! Des œufs colorés ont été cachés partout sur la carte. Sauras-tu tous les retrouver ?</p>
+        <p>Une grande chasse aux œufs est organisée sur la carte ! Des œufs colorés sont cachés un peu partout...</p>
         
         <ul class="rules">
-            <li>🔍 Explore la carte pour trouver les œufs cachés</li>
-            <li>🥚 Marche sur un œuf pour le collecter</li>
-            <li>📊 Suis ta progression en temps réel</li>
-            <li>🏆 Trouve-les tous pour gagner !</li>
+            <li>🥚 Pour participer, clique sur le bouton <strong>🥚 Chasse aux œufs</strong> dans le menu en bas</li>
+            <li>⏱️ Un chronomètre se lancera dès que tu cliqueras sur "C'est parti"</li>
+            <li>🔍 Explore la carte et marche sur les œufs pour les collecter</li>
+            <li>⚠️ Attention aux pièges ! Certains chocolats sont périmés...</li>
+            <li>🏆 Le plus rapide à tous les trouver gagne !</li>
         </ul>
 
-        <p><strong>Es-tu prêt(e) ?</strong></p>
+        <p style="color: #ffd54f; font-weight: bold;">⚠️ Une fois lancée, la chasse ne peut pas être recommencée. Le chrono tourne !</p>
 
-        <button class="btn btn-start" id="startButton">C'est parti ! 🚀</button>
+        <button class="btn btn-start" id="okButton">D'accord 👍</button>
     </div>
 
     <script src="https://play.workadventu.re/iframe_api.js"></script>
     <script>
-        document.getElementById('startButton').addEventListener('click', function() {
+        document.getElementById('okButton').addEventListener('click', function() {
             WA.ui.modal.closeModal();
         });
     </script>
