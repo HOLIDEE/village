@@ -52,6 +52,47 @@ let huntStarted = false;
 let huntPaused = false; // true quand l'admin a désactivé la chasse
 let isSick = false; // true quand le joueur est "malade" (piège)
 
+// Positions des tuiles visuelles sur EasterEggVisuals (chargées depuis le TMJ)
+let eggVisualTiles: { x: number; y: number }[] = [];
+
+async function loadEggVisualTilePositions() {
+    try {
+        const mapUrl = WA.room.mapURL;
+        const resp = await fetch(mapUrl);
+        const map = await resp.json();
+        const layer = map.layers?.find((l: any) => l.name === EGGS_VISUAL_LAYER && l.type === "tilelayer");
+        if (!layer?.data) {
+            // Chercher dans les groupes de calques
+            for (const group of map.layers ?? []) {
+                if (group.type === "group" && group.layers) {
+                    const sub = group.layers.find((l: any) => l.name === EGGS_VISUAL_LAYER && l.type === "tilelayer");
+                    if (sub?.data) {
+                        const width = sub.width || map.width;
+                        for (let i = 0; i < sub.data.length; i++) {
+                            if (sub.data[i] !== 0) {
+                                eggVisualTiles.push({ x: i % width, y: Math.floor(i / width) });
+                            }
+                        }
+                        console.info("Easter: loaded", eggVisualTiles.length, "visual tile positions (from group)");
+                        return;
+                    }
+                }
+            }
+            console.warn("Easter: EasterEggVisuals layer not found in TMJ");
+            return;
+        }
+        const width = layer.width || map.width;
+        for (let i = 0; i < layer.data.length; i++) {
+            if (layer.data[i] !== 0) {
+                eggVisualTiles.push({ x: i % width, y: Math.floor(i / width) });
+            }
+        }
+        console.info("Easter: loaded", eggVisualTiles.length, "visual tile positions");
+    } catch (e) {
+        console.warn("Easter: loadEggVisualTilePositions failed", e);
+    }
+}
+
 function getFoundCount(progress: EasterProgress): number {
     return Object.values(progress).filter(Boolean).length;
 }
@@ -60,19 +101,76 @@ function getRandomMessage(): string {
     return EGG_FOUND_MESSAGES[Math.floor(Math.random() * EGG_FOUND_MESSAGES.length)];
 }
 
-// Supprimer un œuf individuellement (local au joueur)
-async function hideEggObject(areaName: string) {
+// Supprimer la zone de détection d'un œuf (local au joueur)
+async function deleteArea(areaName: string) {
     try {
         await WA.room.area.delete(areaName);
     } catch (e) {
-        console.warn("Easter: hideEggObject error", areaName, e);
+        console.warn("Easter: deleteArea error", areaName, e);
+    }
+}
+
+// Effacer la tuile visuelle d'un œuf quand le joueur marche dessus
+async function hideEggVisualAtPlayer(areaName: string) {
+    try {
+        const pos = await WA.player.getPosition();
+        const playerTX = Math.floor(pos.x / 32);
+        const playerTY = Math.floor(pos.y / 32);
+
+        // Trouver la tuile la plus proche du joueur
+        let closest: { x: number; y: number } | null = null;
+        let minDist = Infinity;
+        for (const t of eggVisualTiles) {
+            const dx = t.x - playerTX;
+            const dy = t.y - playerTY;
+            const dist = dx * dx + dy * dy;
+            if (dist < minDist) {
+                minDist = dist;
+                closest = t;
+            }
+        }
+
+        if (closest && minDist <= 9) { // dans un rayon de ~3 tuiles
+            WA.room.setTiles([{ x: closest.x, y: closest.y, tile: null, layer: EGGS_VISUAL_LAYER }]);
+            // Retirer de la liste pour ne pas la re-matcher
+            eggVisualTiles = eggVisualTiles.filter(t => t !== closest);
+            // Sauvegarder la position pour le resume
+            const stored = (WA.player.state.easterEggTilePositions as Record<string, { x: number; y: number }>) ?? {};
+            stored[areaName] = { x: closest.x, y: closest.y };
+            WA.player.state.easterEggTilePositions = { ...stored };
+            console.info("Easter: cleared visual tile for", areaName, "at", closest.x, closest.y);
+        } else {
+            console.warn("Easter: no visual tile found near player for", areaName, "dist=", minDist);
+        }
+    } catch (e) {
+        console.warn("Easter: hideEggVisualAtPlayer error", areaName, e);
+    }
+}
+
+// Restaurer les tuiles effacées au resume (œufs déjà trouvés)
+function hideFoundEggVisuals() {
+    try {
+        const stored = (WA.player.state.easterEggTilePositions as Record<string, { x: number; y: number }>) ?? {};
+        const tilesToClear: { x: number; y: number; tile: null; layer: string }[] = [];
+        for (const [_name, pos] of Object.entries(stored)) {
+            tilesToClear.push({ x: pos.x, y: pos.y, tile: null, layer: EGGS_VISUAL_LAYER });
+            // Aussi retirer de eggVisualTiles pour ne pas les re-matcher
+            eggVisualTiles = eggVisualTiles.filter(t => t.x !== pos.x || t.y !== pos.y);
+        }
+        if (tilesToClear.length > 0) {
+            WA.room.setTiles(tilesToClear);
+            console.info("Easter: restored", tilesToClear.length, "cleared tiles on resume");
+        }
+    } catch (e) {
+        console.warn("Easter: hideFoundEggVisuals error", e);
     }
 }
 
 function hideFoundEggs(progress: EasterProgress) {
     for (const [areaName, found] of Object.entries(progress)) {
-        if (found) hideEggObject(areaName);
+        if (found) deleteArea(areaName);
     }
+    hideFoundEggVisuals();
 }
 
 // Cacher les pièges déjà déclenchés
@@ -80,7 +178,18 @@ function hideTriggeredTraps() {
     try {
         const triggered = (WA.player.state.easterTrapsTriggered as string[]) ?? [];
         for (const trapName of triggered) {
-            hideEggObject(trapName);
+            deleteArea(trapName);
+        }
+        // Aussi effacer les tuiles visuelles des pièges
+        const stored = (WA.player.state.easterEggTilePositions as Record<string, { x: number; y: number }>) ?? {};
+        const tilesToClear: { x: number; y: number; tile: null; layer: string }[] = [];
+        for (const trapName of triggered) {
+            if (stored[trapName]) {
+                tilesToClear.push({ x: stored[trapName].x, y: stored[trapName].y, tile: null, layer: EGGS_VISUAL_LAYER });
+            }
+        }
+        if (tilesToClear.length > 0) {
+            WA.room.setTiles(tilesToClear);
         }
     } catch (_e) { /* */ }
 }
@@ -101,7 +210,8 @@ function triggerTrap(trapName: string) {
     } catch (_e) { /* */ }
 
     // Supprimer visuellement le piège
-    hideEggObject(trapName);
+    deleteArea(trapName);
+    hideEggVisualAtPlayer(trapName);
 
     // Bloquer le joueur
     try { WA.controls.disablePlayerControls(); } catch (_e) { /* */ }
@@ -235,6 +345,7 @@ function resetMyProgress() {
     WA.player.state.easterTimerStart = null;
     WA.player.state.easterTimerEnd = null;
     WA.player.state.easterSeenIntro = false;
+    WA.player.state.easterEggTilePositions = null;
     // Retirer du classement partagé
     try {
         const playerName = WA.player.name || "Joueur";
@@ -279,7 +390,7 @@ function startTimer() {
 // =============================================
 // INITIALISATION PRINCIPALE
 // =============================================
-WA.onInit().then(() => {
+WA.onInit().then(async () => {
     const mapUrl = WA.room.mapURL;
     console.info("Easter: WA.onInit OK, map =", mapUrl);
 
@@ -287,6 +398,9 @@ WA.onInit().then(() => {
 
     // Charger les sons
     loadSounds(root);
+
+    // Charger les positions des tuiles visuelles des œufs
+    await loadEggVisualTilePositions();
 
     // Activer le tracking des joueurs (pour le leaderboard)
     try {
@@ -579,7 +693,8 @@ function setupEggListeners(progress: EasterProgress, root: string) {
             WA.player.state.easterProgress = { ...currentProgress };
 
             playEggSound();
-            hideEggObject(areaName);
+            deleteArea(areaName);
+            hideEggVisualAtPlayer(areaName);
 
             const count = getFoundCount(currentProgress);
             updatePublicScore(count);
