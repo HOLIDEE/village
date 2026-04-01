@@ -497,13 +497,6 @@ WA.onInit().then(async () => {
         });
     } catch (_e) { /* */ }
 
-    // Si la chasse est fermée par l'admin → ne rien afficher
-    if (huntPaused) {
-        console.info("Easter: hunt closed, showing nothing");
-        setupAdminButton(root);
-        return;
-    }
-
     // Vérifier l'état du jeu
     let isCompleted = false;
     let wasStarted = false;
@@ -512,7 +505,7 @@ WA.onInit().then(async () => {
         wasStarted = WA.player.state.easterHuntStarted === true;
     } catch (_e) { /* */ }
 
-    if (isCompleted) {
+    if (isCompleted && !huntPaused) {
         console.info("Easter: already completed");
         startTimer(); // reprendre le chrono pour affichage
         const elapsed = getElapsedSeconds();
@@ -529,7 +522,7 @@ WA.onInit().then(async () => {
         return;
     }
 
-    if (wasStarted) {
+    if (wasStarted && !huntPaused) {
         console.info("Easter: resuming hunt");
         huntStarted = true;
         startTimer();
@@ -557,7 +550,7 @@ WA.onInit().then(async () => {
     // Première visite ou joueur qui a vu les instructions mais pas encore lancé
     const hasSeenIntro = WA.player.state.easterSeenIntro === true;
 
-    if (!hasSeenIntro) {
+    if (!hasSeenIntro && !huntPaused) {
         // Popup informative avec "D'accord"
         console.info("Easter: first visit, showing intro");
         try {
@@ -576,7 +569,7 @@ WA.onInit().then(async () => {
         }
     }
 
-    // Bouton menu pour lancer la chasse
+    // Bouton menu TOUJOURS visible, quelle que soit l'état de la chasse
     try {
         WA.ui.actionBar.addButton({
             id: "easter-start-btn",

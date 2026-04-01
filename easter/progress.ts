@@ -1,6 +1,6 @@
 /// <reference types="@workadventure/iframe-api-typings" />
 
-const TOTAL_EGGS = 4;
+const TOTAL_EGGS = 36;
 
 WA.onInit().then(() => {
     const progress = WA.player.state.easterProgress as Record<string, boolean> | undefined;
@@ -10,7 +10,7 @@ WA.onInit().then(() => {
         foundCount = Object.values(progress).filter(Boolean).length;
     }
 
-    const percent = Math.round((foundCount / TOTAL_EGGS) * 100);
+    const percent = Math.min(100, Math.round((foundCount / TOTAL_EGGS) * 100));
 
     // Mettre à jour la barre de progression
     const progressBar = document.getElementById("progressBar");
@@ -34,7 +34,7 @@ WA.onInit().then(() => {
     if (eggGrid) {
         for (let i = 1; i <= TOTAL_EGGS; i++) {
             const div = document.createElement("div");
-            const isFound = progress ? progress[`easterEgg${i}`] === true : false;
+            const isFound = progress ? progress[`easterEggs${i}`] === true : false;
             div.className = `egg-item ${isFound ? "egg-found" : "egg-missing"}`;
             div.textContent = isFound ? "🥚" : "❓";
             div.title = `Œuf #${i} - ${isFound ? "Trouvé !" : "Pas encore trouvé"}`;
