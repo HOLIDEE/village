@@ -452,7 +452,33 @@ WA.onInit().then(async () => {
                 huntPaused = false;
                 console.info("Easter: hunt ENABLED by admin (live)");
                 if (huntStarted) {
+                    // Chasse déjà active dans cette session
                     WA.room.showLayer(EGGS_VISUAL_LAYER);
+                    hideFoundEggVisuals();
+                } else if (WA.player.state.easterHuntStarted === true) {
+                    // Le joueur avait commencé avant un rechargement, reprendre
+                    huntStarted = true;
+                    startTimer();
+                    WA.room.showLayer(EGGS_VISUAL_LAYER);
+                    const resumeProgress = (WA.player.state.easterProgress as EasterProgress) ?? progress;
+                    hideFoundEggs(resumeProgress);
+                    hideTriggeredTraps();
+                    setupEggListeners(resumeProgress, root);
+                    setupTrapListeners();
+                    setupTeleportTraps();
+                    startClues(resumeProgress);
+                    setupLeaderboard(root);
+                    const elapsed = getElapsedSeconds();
+                    const cnt = getFoundCount(resumeProgress);
+                    WA.ui.banner.openBanner({
+                        id: "easter-banner",
+                        text: `🥚 Chasse reprise : ${cnt}/${TOTAL_EGGS} œufs (⏱️ ${formatTimer(elapsed)})`,
+                        bgColor: "#FF9800",
+                        textColor: "#ffffff",
+                        closable: true,
+                        timeToClose: 8000,
+                    });
+                    return; // ne pas afficher le 2e banner
                 }
                 WA.ui.banner.openBanner({
                     id: "easter-banner",
@@ -642,11 +668,18 @@ function startHunt(progress: EasterProgress, root: string) {
     // Afficher les œufs
     WA.room.showLayer(EGGS_VISUAL_LAYER);
 
+    // Masquer les œufs déjà trouvés (en cas de reprise après pause admin)
+    hideFoundEggs(progress);
+    hideTriggeredTraps();
+
     setupLeaderboard(root);
 
+    const currentCount = getFoundCount(progress);
     WA.ui.banner.openBanner({
         id: "easter-banner",
-        text: `🐰 C'est parti ! Trouve les ${TOTAL_EGGS} œufs cachés ! ⏱️ Chrono lancé !`,
+        text: currentCount > 0
+            ? `🐰 Chasse reprise ! ${currentCount}/${TOTAL_EGGS} déjà trouvés. ⏱️ Chrono lancé !`
+            : `🐰 C'est parti ! Trouve les ${TOTAL_EGGS} œufs cachés ! ⏱️ Chrono lancé !`,
         bgColor: "#FF9800",
         textColor: "#ffffff",
         closable: true,
