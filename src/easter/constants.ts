@@ -49,14 +49,34 @@ export const TOTAL_TELEPORTS = 2; // ← Change ce nombre quand tu ajoutes des z
 export const TELEPORT_START_X = 2722;
 export const TELEPORT_START_Y = 2782;
 
-// Délai entre les indices (en millisecondes) - 60 secondes
-export const CLUE_TIMEOUT = 60000;
+// Délai entre les indices (en millisecondes) - 4 minutes
+export const CLUE_TIMEOUT = 240000;
 
-// Indices optionnels (affichés périodiquement)
+// Indices optionnels (affichés périodiquement, ordre aléatoire non répétitif)
 export const CLUES = [
-    "Indice : As-tu regardé près des arbres ? 🌳",
-    "Indice : Certains œufs aiment se cacher près de l'eau... 💧",
-    "Indice : N'oublie pas d'explorer les bâtiments ! 🏠",
-    "Indice : Regarde bien dans les coins de la carte ! 🗺️",
-    "Indice : Les derniers œufs sont souvent les mieux cachés ! 🔍",
+    "🌳 Indice : As-tu regardé dans les arbres et buissons ?",
+    "💧 Indice : Certains œufs aiment se cacher près de l'eau...",
+    "🏠 Indice : N'oublie pas d'explorer l'intérieur des bâtiments !",
+    "🗺️ Indice : Les coins et recoins de la carte réservent des surprises !",
+    "🔍 Indice : Les derniers œufs sont souvent les mieux cachés...",
+    "🐰 Indice : Le lapin de Pâques a une préférence pour les endroits fleuris !",
+    "🌸 Indice : Regarde bien autour des zones décorées !",
+    "🏡 Indice : Certains œufs se cachent sous les toits et dans les recoins des maisons.",
+    "🌿 Indice : La végétation est une excellente cachette pour les œufs !",
+    "🎪 Indice : As-tu pensé à explorer la place centrale ?",
+    "🛤️ Indice : Longe bien les chemins, des œufs sur chaque bordure !",
+    "🌄 Indice : Les zones en hauteur cachent parfois de belles surprises !",
+    "🎨 Indice : Cherche près des décorations colorées !",
+    "🧱 Indice : Les murs et les clôtures sont de bons endroits pour chercher !",
+    "🌻 Indice : Les jardins regorgent peut-être d'œufs bien dissimulés !",
+    "🎯 Indice : Tu as fait tout le tour de la carte ? Alors recommence, tu en as sûrement raté !",
+    "🦔 Indice : Même les petits coins sombres peuvent cacher un œuf !",
+    "🚪 Indice : As-tu vérifié derrière chaque porte et entrée ?",
+    "🌙 Indice : Certains emplacements sont difficiles à voir au premier coup d'œil !",
+    "🏆 Indice : Les chasseurs persévérants finissent toujours par trouver tous les œufs !",
+    "🎶 Indice : Explore sans te presser, les œufs ne courent pas... enfin normalement !",
+    "🐣 Indice : Un poussin vient d'éclore près d'un œuf non trouvé, cherche bien !",
+    "🌈 Indice : Suis les couleurs de la carte, elles te mèneront peut-être aux œufs !",
+    "🏕️ Indice : Les zones moins fréquentées sont idéales pour cacher des œufs !",
+    "🎁 Indice : Traite chaque zone comme un cadeau à ouvrir, explore tout !",
 ];

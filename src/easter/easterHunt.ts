@@ -470,9 +470,9 @@ WA.onInit().then(async () => {
     // Vérifier si la chasse est ouverte par l'admin
     try {
         const huntActive = (WA.state as any).easterHuntActive;
-        if (huntActive === false) {
+        if (huntActive !== true) {
             huntPaused = true;
-            console.info("Easter: hunt is DISABLED by admin");
+            console.info("Easter: hunt is DISABLED by admin (default off)");
         }
     } catch (_e) { /* */ }
 
@@ -836,25 +836,37 @@ function setupEggListeners(progress: EasterProgress, root: string) {
     }
 }
 
+// Index des clues déjà affichés (eviter répétition)
+let clueShuffled: number[] = [];
+let clueShufflePos = 0;
+
+function getNextClue(): string {
+    // Reconstruire le shuffle si épuisé
+    if (clueShufflePos >= clueShuffled.length) {
+        clueShuffled = CLUES.map((_, i) => i).sort(() => Math.random() - 0.5);
+        clueShufflePos = 0;
+    }
+    return CLUES[clueShuffled[clueShufflePos++]];
+}
+
 function startClues(progress: EasterProgress) {
     clearClues();
+    // Réinitialiser le shuffle
+    clueShuffled = [];
+    clueShufflePos = 0;
     timeoutClueRegularly = setInterval(() => {
         const count = getFoundCount(progress);
-        if (count >= TOTAL_EGGS) {
+        if (count >= TOTAL_EGGS || huntPaused) {
             clearClues();
             return;
         }
-        const clueIndex = Math.min(
-            Math.floor(count / (TOTAL_EGGS / CLUES.length)),
-            CLUES.length - 1
-        );
         WA.ui.banner.openBanner({
             id: "easter-clue",
-            text: CLUES[clueIndex],
+            text: getNextClue(),
             bgColor: "#9C27B0",
             textColor: "#ffffff",
             closable: true,
-            timeToClose: 8000,
+            timeToClose: 10000,
         });
     }, CLUE_TIMEOUT);
 }
