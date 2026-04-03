@@ -238,7 +238,7 @@
 
             document.getElementById('statusStarted').textContent =
                 completed ? 'Termin\u00e9e \u2705' : (started ? 'En cours \u{1F3C3}' : 'Pas commenc\u00e9e');
-            document.getElementById('statusEggs').textContent = count + ' / 50';
+            document.getElementById('statusEggs').textContent = count + ' / 30';
 
             // Chasse active ?
             var huntActive = WA.state.easterHuntActive;
@@ -307,7 +307,7 @@
             WA.player.state.easterHuntDisabled = false;
             showMessage('\u2705 Progression r\u00e9initialis\u00e9e ! Recharge la page (F5).', 'rgba(76, 175, 80, 0.3)');
             document.getElementById('statusStarted').textContent = 'Pas commenc\u00e9e';
-            document.getElementById('statusEggs').textContent = '0 / 50';
+            document.getElementById('statusEggs').textContent = '0 / 30';
         });
         document.getElementById('btnConfirmResetNo').addEventListener('click', function() {
             document.getElementById('confirmReset').style.display = 'none';
