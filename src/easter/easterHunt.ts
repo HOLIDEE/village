@@ -587,6 +587,8 @@ WA.onInit().then(async () => {
             closable: true,
             timeToClose: 10000,
         });
+        // Re-synchroniser le temps dans le classement partagé (au cas où l'entrée ne l'aurait pas)
+        if (savedElapsed > 0) updateSharedLeaderboardWithTime(count, savedElapsed);
         setupLeaderboard(root);
         setupAdminButton(root);
         // Bouton persistant "🏆 Terminée !" qui rouvre les félicitations

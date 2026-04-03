@@ -13,14 +13,35 @@
         <h1>Félicitations !</h1>
         <p class="victory-text">Tu as trouvé tous les œufs de Pâques !</p>
         <p>Tu es un vrai champion de la chasse aux œufs ! Le lapin de Pâques est fier de toi 🐰</p>
+        <p id="timeDisplay" style="font-size:1.3rem; font-weight:bold; color:#ffd54f; margin-top:12px;">⏱️ Chargement...</p>
 
         <button class="btn btn-close" id="closeButton" style="margin-top: 20px;">Fermer 🎉</button>
     </div>
 
     <script src="https://play.workadventu.re/iframe_api.js"></script>
     <script>
+        function formatTimer(totalSeconds) {
+            var h = Math.floor(totalSeconds / 3600);
+            var m = Math.floor((totalSeconds % 3600) / 60);
+            var s = totalSeconds % 60;
+            if (h > 0) return h + 'h ' + ('0'+m).slice(-2) + 'm ' + ('0'+s).slice(-2) + 's';
+            return m + 'm ' + ('0'+s).slice(-2) + 's';
+        }
+
         document.getElementById('closeButton').addEventListener('click', function() {
             WA.ui.modal.closeModal();
+        });
+
+        WA.onInit().then(function() {
+            var elapsed = WA.player.state.easterTimerEnd;
+            var el = document.getElementById('timeDisplay');
+            if (elapsed && elapsed > 0) {
+                el.textContent = '⏱️ Temps : ' + formatTimer(elapsed);
+            } else {
+                el.textContent = '';
+            }
+        }).catch(function() {
+            document.getElementById('timeDisplay').textContent = '';
         });
     </script>
 </body>
