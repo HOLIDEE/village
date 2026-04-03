@@ -36,7 +36,7 @@ WA.onInit().then(() => {
             const div = document.createElement("div");
             const isFound = progress ? progress[`easterEggs${i}`] === true : false;
             div.className = `egg-item ${isFound ? "egg-found" : "egg-missing"}`;
-            div.textContent = isFound ? "🥚" : "❓";
+            div.innerHTML = `<span>${isFound ? "🥚" : "❓"}</span><span class="egg-number">${i}</span>`;
             div.title = `Œuf #${i} - ${isFound ? "Trouvé !" : "Pas encore trouvé"}`;
             eggGrid.appendChild(div);
         }

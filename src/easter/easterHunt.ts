@@ -2,6 +2,7 @@
 
 import {
     TOTAL_EGGS,
+    EGGS_LAYER,
     EGGS_VISUAL_LAYER,
     EGG_FOUND_MESSAGES,
     CLUE_TIMEOUT,
@@ -54,6 +55,8 @@ let isSick = false; // true quand le joueur est "malade" (piège)
 
 // Positions des tuiles visuelles sur EasterEggVisuals (chargées depuis le TMJ)
 let eggVisualTiles: { x: number; y: number }[] = [];
+// Bounds en tuiles de chaque zone easter (chargées depuis le TMJ)
+let eggAreaMap = new Map<string, { txMin: number; txMax: number; tyMin: number; tyMax: number }>();
 
 async function loadEggVisualTilePositions() {
     try {
@@ -88,9 +91,36 @@ async function loadEggVisualTilePositions() {
             }
         }
         console.info("Easter: loaded", eggVisualTiles.length, "visual tile positions");
+        // Charger les bounds des zones EasterEggs
+        loadEggAreaBoundsFromMap(map);
     } catch (e) {
         console.warn("Easter: loadEggVisualTilePositions failed", e);
     }
+}
+
+function loadEggAreaBoundsFromMap(map: any) {
+    const findObjectLayer = (layers: any[]): any[] => {
+        for (const l of layers) {
+            if (l.name === EGGS_LAYER && l.type === "objectgroup") return l.objects ?? [];
+            if (l.layers) {
+                const nested = findObjectLayer(l.layers);
+                if (nested.length > 0) return nested;
+            }
+        }
+        return [];
+    };
+    const objects = findObjectLayer(map.layers ?? []);
+    for (const obj of objects) {
+        if (obj.name) {
+            eggAreaMap.set(obj.name, {
+                txMin: Math.floor(obj.x / 32),
+                tyMin: Math.floor(obj.y / 32),
+                txMax: Math.ceil((obj.x + obj.width) / 32) - 1,
+                tyMax: Math.ceil((obj.y + obj.height) / 32) - 1,
+            });
+        }
+    }
+    console.info("Easter: loaded", eggAreaMap.size, "egg area bounds");
 }
 
 function getFoundCount(progress: EasterProgress): number {
@@ -110,37 +140,46 @@ async function deleteArea(areaName: string) {
     }
 }
 
-// Effacer la tuile visuelle d'un œuf quand le joueur marche dessus
+// Effacer la/les tuile(s) visuelle(s) d'un œuf quand le joueur marche dessus
 async function hideEggVisualAtPlayer(areaName: string) {
     try {
-        const pos = await WA.player.getPosition();
-        const playerTX = Math.floor(pos.x / 32);
-        const playerTY = Math.floor(pos.y / 32);
+        const bounds = eggAreaMap.get(areaName);
+        let tilesToRemove: { x: number; y: number }[] = [];
 
-        // Trouver la tuile la plus proche du joueur
-        let closest: { x: number; y: number } | null = null;
-        let minDist = Infinity;
-        for (const t of eggVisualTiles) {
-            const dx = t.x - playerTX;
-            const dy = t.y - playerTY;
-            const dist = dx * dx + dy * dy;
-            if (dist < minDist) {
-                minDist = dist;
-                closest = t;
-            }
+        if (bounds) {
+            // Trouver TOUTES les tuiles dans la bounding box de l'œuf (avec 1 tuile de marge)
+            tilesToRemove = eggVisualTiles.filter(t =>
+                t.x >= bounds.txMin - 1 && t.x <= bounds.txMax + 1 &&
+                t.y >= bounds.tyMin - 1 && t.y <= bounds.tyMax + 1
+            );
         }
 
-        if (closest && minDist <= 9) { // dans un rayon de ~3 tuiles
-            WA.room.setTiles([{ x: closest.x, y: closest.y, tile: null, layer: EGGS_VISUAL_LAYER }]);
-            // Retirer de la liste pour ne pas la re-matcher
-            eggVisualTiles = eggVisualTiles.filter(t => t !== closest);
-            // Sauvegarder la position pour le resume
-            const stored = (WA.player.state.easterEggTilePositions as Record<string, { x: number; y: number }>) ?? {};
-            stored[areaName] = { x: closest.x, y: closest.y };
+        // Fallback : tuile la plus proche du joueur
+        if (tilesToRemove.length === 0) {
+            const pos = await WA.player.getPosition();
+            const playerTX = Math.floor(pos.x / 32);
+            const playerTY = Math.floor(pos.y / 32);
+            let closest: { x: number; y: number } | null = null;
+            let minDist = Infinity;
+            for (const t of eggVisualTiles) {
+                const dx = t.x - playerTX;
+                const dy = t.y - playerTY;
+                const dist = dx * dx + dy * dy;
+                if (dist < minDist) { minDist = dist; closest = t; }
+            }
+            if (closest && minDist <= 9) tilesToRemove = [closest];
+        }
+
+        if (tilesToRemove.length > 0) {
+            WA.room.setTiles(tilesToRemove.map(t => ({ x: t.x, y: t.y, tile: null, layer: EGGS_VISUAL_LAYER })));
+            eggVisualTiles = eggVisualTiles.filter(t => !tilesToRemove.includes(t));
+            // Sauvegarder toutes les positions pour le resume
+            const stored = (WA.player.state.easterEggTilePositions as Record<string, { x: number; y: number } | { x: number; y: number }[]>) ?? {};
+            stored[areaName] = tilesToRemove.length === 1 ? tilesToRemove[0] : tilesToRemove;
             WA.player.state.easterEggTilePositions = { ...stored };
-            console.info("Easter: cleared visual tile for", areaName, "at", closest.x, closest.y);
+            console.info("Easter: cleared", tilesToRemove.length, "visual tile(s) for", areaName);
         } else {
-            console.warn("Easter: no visual tile found near player for", areaName, "dist=", minDist);
+            console.warn("Easter: no visual tile found for", areaName);
         }
     } catch (e) {
         console.warn("Easter: hideEggVisualAtPlayer error", areaName, e);
@@ -150,12 +189,15 @@ async function hideEggVisualAtPlayer(areaName: string) {
 // Restaurer les tuiles effacées au resume (œufs déjà trouvés)
 function hideFoundEggVisuals() {
     try {
-        const stored = (WA.player.state.easterEggTilePositions as Record<string, { x: number; y: number }>) ?? {};
+        const stored = (WA.player.state.easterEggTilePositions as Record<string, { x: number; y: number } | { x: number; y: number }[]>) ?? {};
         const tilesToClear: { x: number; y: number; tile: null; layer: string }[] = [];
         for (const [_name, pos] of Object.entries(stored)) {
-            tilesToClear.push({ x: pos.x, y: pos.y, tile: null, layer: EGGS_VISUAL_LAYER });
-            // Aussi retirer de eggVisualTiles pour ne pas les re-matcher
-            eggVisualTiles = eggVisualTiles.filter(t => t.x !== pos.x || t.y !== pos.y);
+            // Supporter les formats : position unique OU tableau de positions (multi-tuiles)
+            const positions: { x: number; y: number }[] = Array.isArray(pos) ? pos : [pos];
+            for (const p of positions) {
+                tilesToClear.push({ x: p.x, y: p.y, tile: null, layer: EGGS_VISUAL_LAYER });
+                eggVisualTiles = eggVisualTiles.filter(t => t.x !== p.x || t.y !== p.y);
+            }
         }
         if (tilesToClear.length > 0) {
             WA.room.setTiles(tilesToClear);
@@ -346,6 +388,7 @@ function resetMyProgress() {
     WA.player.state.easterTimerEnd = null;
     WA.player.state.easterSeenIntro = false;
     WA.player.state.easterEggTilePositions = null;
+    WA.player.state.easterTrapsTriggered = null;
     // Retirer du classement partagé
     try {
         const playerName = WA.player.name || "Joueur";
@@ -533,11 +576,12 @@ WA.onInit().then(async () => {
 
     if (isCompleted && !huntPaused) {
         console.info("Easter: already completed");
-        startTimer(); // reprendre le chrono pour affichage
-        const elapsed = getElapsedSeconds();
+        // Utiliser le temps final sauvegardé, pas le temps recalculé depuis le début
+        const savedElapsed = (WA.player.state.easterTimerEnd as number | undefined) ?? 0;
+        const elapsedStr = savedElapsed > 0 ? formatTimer(savedElapsed) : "?";
         WA.ui.banner.openBanner({
             id: "easter-banner",
-            text: `🎉 Chasse terminée ! ${count}/${TOTAL_EGGS} œufs en ${formatTimer(elapsed)} !`,
+            text: `🎉 Chasse terminée ! ${count}/${TOTAL_EGGS} œufs en ${elapsedStr} !`,
             bgColor: "#4CAF50",
             textColor: "#ffffff",
             closable: true,
@@ -545,6 +589,22 @@ WA.onInit().then(async () => {
         });
         setupLeaderboard(root);
         setupAdminButton(root);
+        // Bouton persistant "🏆 Terminée !" qui rouvre les félicitations
+        try {
+            WA.ui.actionBar.addButton({
+                id: "easter-start-btn",
+                label: "🏆 Terminée !",
+                callback: () => {
+                    WA.ui.modal.openModal({
+                        title: "Félicitations !",
+                        src: `${root}/easter/congratulations.html`,
+                        allow: "microphone; camera",
+                        allowApi: true,
+                        position: "center",
+                    });
+                },
+            });
+        } catch (_e) { /* */ }
         return;
     }
 
@@ -570,6 +630,15 @@ WA.onInit().then(async () => {
         startClues(progress);
         setupLeaderboard(root);
         setupAdminButton(root);
+        // Mettre à jour le label du bouton en mode "Progression"
+        try {
+            WA.ui.actionBar.removeButton("easter-start-btn");
+            WA.ui.actionBar.addButton({
+                id: "easter-start-btn",
+                label: "📊 Progression",
+                callback: () => { showProgress(progress, root); },
+            });
+        } catch (_e) { /* */ }
         return;
     }
 
@@ -690,6 +759,15 @@ function startHunt(progress: EasterProgress, root: string) {
     setupTrapListeners();
     setupTeleportTraps();
     startClues(progress);
+    // Mettre à jour le label du bouton en mode "Progression"
+    try {
+        WA.ui.actionBar.removeButton("easter-start-btn");
+        WA.ui.actionBar.addButton({
+            id: "easter-start-btn",
+            label: "📊 Progression",
+            callback: () => { showProgress(progress, root); },
+        });
+    } catch (_e) { /* */ }
 }
 
 function setupEggListeners(progress: EasterProgress, root: string) {
