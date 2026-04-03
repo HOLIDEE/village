@@ -225,7 +225,7 @@
             list.innerHTML = entries.map(function(p) {
                 var isMe = (p.name === myName);
                 var displayName = isMe ? escapeHtml(p.name) + ' <span style="color:#64b5f6">(toi)</span>' : escapeHtml(p.name);
-                return '<li><span>' + displayName + '</span><span style="color:#ffd54f">' + p.score + '/50 \u{1F95A}</span></li>';
+                return '<li><span>' + displayName + '</span><span style="color:#ffd54f">' + p.score + '/30 \u{1F95A}</span></li>';
             }).join('');
         }
 

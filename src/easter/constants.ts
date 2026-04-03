@@ -6,7 +6,7 @@
 // Nombre total d'œufs cachés sur la carte
 // IMPORTANT : Ce nombre doit correspondre au nombre de zones
 // "easterEgg1", "easterEgg2", etc. créées dans Tiled
-export const TOTAL_EGGS = 50;
+export const TOTAL_EGGS = 30;
 
 // Nombre de pièges (œufs cassés)
 // Doit correspondre aux zones "easterTrap1", "easterTrap2"... dans Tiled
