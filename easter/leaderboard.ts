@@ -1,6 +1,6 @@
 /// <reference types="@workadventure/iframe-api-typings" />
 
-const TOTAL_EGGS = 4;
+const TOTAL_EGGS = 50;
 
 interface PlayerScore {
     name: string;
