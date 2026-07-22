@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Chasse aux Œufs</title>
+    <link rel="stylesheet" href="css.css" />
+    <style>
+        .admin-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .admin-btn {
+            display: block;
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #fff;
+            text-align: center;
+        }
+        .admin-btn:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+        .btn-activate {
+            background: linear-gradient(135deg, #43a047, #2e7d32);
+        }
+        .btn-deactivate {
+            background: linear-gradient(135deg, #f57c00, #e65100);
+        }
+        .btn-reset {
+            background: linear-gradient(135deg, #e53935, #c62828);
+        }
+        .btn-resetall {
+            background: linear-gradient(135deg, #b71c1c, #880e0e);
+        }
+
+        .btn-close {
+            background: linear-gradient(135deg, #546e7a, #37474f);
+            margin-top: 8px;
+        }
+        .status-box {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+        .status-box p {
+            margin: 6px 0;
+            font-size: 0.9rem;
+        }
+        .status-value {
+            color: #ffd54f;
+            font-weight: bold;
+        }
+        .section-title {
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            color: #ffd54f;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            padding-bottom: 4px;
+        }
+        .confirm-box {
+            display: none;
+            background: rgba(229, 57, 53, 0.15);
+            border: 2px solid #e53935;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+            text-align: center;
+        }
+        .confirm-box p {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+        .confirm-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .confirm-buttons button {
+            padding: 10px 24px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #fff;
+        }
+        .btn-confirm-yes {
+            background: #e53935;
+        }
+        .btn-confirm-no {
+            background: #546e7a;
+        }
+        #statusMessage {
+            display: none;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+        .leaderboard-list li {
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji-header">⚙️ 🐰</div>
+        <h1>Administration</h1>
+        <p>Panneau de contrôle de la chasse aux œufs.</p>
+
+        <div class="status-box">
+            <h2>📊 État</h2>
+            <p>Chasse active : <span class="status-value" id="statusActive">...</span></p>
+            <p>Ma progression : <span class="status-value" id="statusStarted">...</span></p>
+            <p>Mes œufs : <span class="status-value" id="statusEggs">...</span></p>
+        </div>
+
+        <div class="status-box">
+            <h2>🏆 Classement global</h2>
+            <ul class="leaderboard-list" id="leaderboardList">
+                <li>Chargement...</li>
+            </ul>
+        </div>
+
+        <h3 class="section-title">🎮 Contrôle de la chasse</h3>
+        <div class="admin-actions">
+            <button class="admin-btn btn-activate" id="btnActivate">✅ Activer la chasse (pour tous)</button>
+            <button class="admin-btn btn-deactivate" id="btnDeactivate">⛔ Désactiver la chasse (pour tous)</button>
+        </div>
+
+        <h3 class="section-title">🔧 Outils</h3>
+        <div class="admin-actions">
+            <button class="admin-btn btn-reset" id="btnReset">🗑️ Réinitialiser MA progression</button>
+        </div>
+
+        <h3 class="section-title">⚠️ Zone dangereuse</h3>
+        <div class="admin-actions">
+            <button class="admin-btn btn-resetall" id="btnResetAll">💣 Tout réinitialiser (pour TOUS)</button>
+        </div>
+
+        <div class="confirm-box" id="confirmReset">
+            <p>⚠️ Es-tu sûr(e) ? Toute ta progression sera perdue !</p>
+            <div class="confirm-buttons">
+                <button class="btn-confirm-yes" id="btnConfirmResetYes">Oui, réinitialiser</button>
+                <button class="btn-confirm-no" id="btnConfirmResetNo">Annuler</button>
+            </div>
+        </div>
+
+        <div class="confirm-box" id="confirmResetAll">
+            <p>🚨 Réinitialiser la chasse pour TOUS les joueurs ? Le classement sera vidé et tout le monde repartira de zéro.</p>
+            <div class="confirm-buttons">
+                <button class="btn-confirm-yes" id="btnConfirmResetAllYes">Oui, tout réinitialiser</button>
+                <button class="btn-confirm-no" id="btnConfirmResetAllNo">Annuler</button>
+            </div>
+        </div>
+
+        <div id="statusMessage"></div>
+
+        <button class="admin-btn btn-close" id="btnClose">Fermer</button>
+    </div>
+
+    <script src="https://play.workadventu.re/iframe_api.js"></script>
+    <script>
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderLeaderboard(raw) {
+            var list = document.getElementById('leaderboardList');
+            if (!list) return;
+            var lb = {};
+            try {
+                if (typeof raw === 'string') lb = JSON.parse(raw);
+                else if (raw && typeof raw === 'object') lb = raw;
+            } catch(e) { lb = {}; }
+
+            var entries = [];
+            for (var name in lb) {
+                if (lb.hasOwnProperty(name)) {
+                    var entry = lb[name];
+                    var score = (typeof entry === 'object' && entry !== null) ? (entry.score || 0) : (typeof entry === 'number' ? entry : 0);
+                    var time = (typeof entry === 'object' && entry !== null && entry.time) ? entry.time : null;
+                    entries.push({ name: name, score: score, time: time });
+                }
+            }
+            entries.sort(function(a, b) {
+                if (b.score !== a.score) return b.score - a.score;
+                if (a.time && b.time) return a.time - b.time;
+                if (a.time) return -1;
+                if (b.time) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            if (entries.length === 0) {
+                list.innerHTML = '<li style="color:rgba(255,255,255,0.4);font-style:italic">Aucun joueur</li>';
+                return;
+            }
+
+            var myName = '';
+            try { myName = WA.player.name || ''; } catch(e) {}
+
+            list.innerHTML = entries.map(function(p) {
+                var isMe = (p.name === myName);
+                var displayName = isMe ? escapeHtml(p.name) + ' <span style="color:#64b5f6">(toi)</span>' : escapeHtml(p.name);
+                var timeStr = '';
+                if (p.time) {
+                    var h = Math.floor(p.time / 3600);
+                    var m = Math.floor((p.time % 3600) / 60);
+                    var s = p.time % 60;
+                    timeStr = h > 0 ? ' \u23F1\uFE0F ' + h + 'h' + ('0'+m).slice(-2) + 'm' : ' \u23F1\uFE0F ' + m + 'm' + ('0'+s).slice(-2) + 's';
+                }
+                return '<li><span>' + displayName + '</span><span style="color:#ffd54f">' + p.score + '/30 \u{1F95A}' + timeStr + '</span></li>';
+            }).join('');
+        }
+
+        WA.onInit().then(function() {
+            // Ma progression
+            var started = WA.player.state.easterHuntStarted === true;
+            var completed = WA.player.state.easterCompleted === true;
+            var progress = WA.player.state.easterProgress || {};
+            var count = Object.values(progress).filter(Boolean).length;
+
+            document.getElementById('statusStarted').textContent =
+                completed ? 'Termin\u00e9e \u2705' : (started ? 'En cours \u{1F3C3}' : 'Pas commenc\u00e9e');
+            document.getElementById('statusEggs').textContent = count + ' / 30';
+
+            // Chasse active ?
+            var huntActive = WA.state.easterHuntActive;
+            document.getElementById('statusActive').textContent =
+                (huntActive === false) ? 'Non \u274C' : 'Oui \u2705';
+
+            // Classement global depuis WA.state
+            var raw = WA.state.easterLeaderboard;
+            console.info('Admin: leaderboard data', raw);
+            renderLeaderboard(raw);
+
+            // Mise à jour en temps réel
+            WA.state.onVariableChange('easterLeaderboard').subscribe(function(value) {
+                renderLeaderboard(value);
+            });
+
+            WA.state.onVariableChange('easterHuntActive').subscribe(function(value) {
+                document.getElementById('statusActive').textContent =
+                    (value === false) ? 'Non \u274C' : 'Oui \u2705';
+            });
+        });
+
+        function showMessage(text, color) {
+            var msg = document.getElementById('statusMessage');
+            msg.textContent = text;
+            msg.style.display = 'block';
+            msg.style.background = color;
+            setTimeout(function() { msg.style.display = 'none'; }, 5000);
+        }
+
+        // Activer la chasse (pour tous)
+        document.getElementById('btnActivate').addEventListener('click', function() {
+            WA.state.easterHuntActive = true;
+            document.getElementById('statusActive').textContent = 'Oui \u2705';
+            showMessage('\u2705 Chasse activ\u00e9e pour tous !', 'rgba(76, 175, 80, 0.3)');
+        });
+
+        // Désactiver la chasse (pour tous)
+        document.getElementById('btnDeactivate').addEventListener('click', function() {
+            WA.state.easterHuntActive = false;
+            document.getElementById('statusActive').textContent = 'Non \u274C';
+            showMessage('\u26D4 Chasse d\u00e9sactiv\u00e9e pour tous.', 'rgba(245, 124, 0, 0.3)');
+        });
+
+        // Réinitialiser ma progression
+        document.getElementById('btnReset').addEventListener('click', function() {
+            document.getElementById('confirmReset').style.display = 'block';
+        });
+        document.getElementById('btnConfirmResetYes').addEventListener('click', function() {
+            document.getElementById('confirmReset').style.display = 'none';
+            // Retirer du classement partagé
+            try {
+                var playerName = WA.player.name || 'Joueur';
+                var raw = WA.state.easterLeaderboard || '{}';
+                var lb = {};
+                try { lb = JSON.parse(typeof raw === 'string' ? raw : '{}'); } catch(e) { lb = {}; }
+                delete lb[playerName];
+                WA.state.easterLeaderboard = JSON.stringify(lb);
+            } catch(e) { console.warn('Admin: reset leaderboard entry failed', e); }
+
+            WA.player.state.easterProgress = null;
+            WA.player.state.easterHuntStarted = false;
+            WA.player.state.easterCompleted = false;
+            WA.player.state.easterScore = 0;
+            WA.player.state.easterPlayerName = '';
+            WA.player.state.easterHuntDisabled = false;
+            showMessage('\u2705 Progression r\u00e9initialis\u00e9e ! Recharge la page (F5).', 'rgba(76, 175, 80, 0.3)');
+            document.getElementById('statusStarted').textContent = 'Pas commenc\u00e9e';
+            document.getElementById('statusEggs').textContent = '0 / 30';
+        });
+        document.getElementById('btnConfirmResetNo').addEventListener('click', function() {
+            document.getElementById('confirmReset').style.display = 'none';
+        });
+
+        // Tout réinitialiser (pour tous)
+        document.getElementById('btnResetAll').addEventListener('click', function() {
+            document.getElementById('confirmResetAll').style.display = 'block';
+        });
+        document.getElementById('btnConfirmResetAllYes').addEventListener('click', function() {
+            document.getElementById('confirmResetAll').style.display = 'none';
+            // Vider le classement
+            WA.state.easterLeaderboard = '{}';
+            // Incrémenter la version de reset pour déclencher le reset chez tous les joueurs
+            var currentVersion = WA.state.easterResetVersion || 0;
+            WA.state.easterResetVersion = (typeof currentVersion === 'number' ? currentVersion : 0) + 1;
+            showMessage('\u{1F4A3} Chasse r\u00e9initialis\u00e9e pour tous ! Les joueurs verront un message.', 'rgba(183, 28, 28, 0.3)');
+            renderLeaderboard('{}');
+        });
+        document.getElementById('btnConfirmResetAllNo').addEventListener('click', function() {
+            document.getElementById('confirmResetAll').style.display = 'none';
+        });
+
+        // Fermer
+        document.getElementById('btnClose').addEventListener('click', function() {
+            WA.ui.modal.closeModal();
+        });
+    </script>
+</body>
+</html>

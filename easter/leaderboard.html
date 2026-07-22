@@ -38,6 +38,10 @@
             background: linear-gradient(135deg, rgba(205, 127, 50, 0.2), rgba(184, 115, 51, 0.15));
             border-color: rgba(205, 127, 50, 0.3);
         }
+        .leaderboard li.me {
+            border-color: rgba(33, 150, 243, 0.6);
+            background: rgba(33, 150, 243, 0.15);
+        }
         .rank {
             font-size: 1.4rem;
             min-width: 40px;
@@ -78,6 +82,12 @@
             transform: scale(1.05);
             box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
         }
+        .info-text {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 12px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -91,8 +101,110 @@
         </ul>
 
         <button class="refresh-btn" id="refreshBtn">🔄 Rafraîchir</button>
+        <p class="info-text">Classement global de tous les participants.</p>
     </div>
 
-    <script src="leaderboard.ts" type="module"></script>
+    <script src="https://play.workadventu.re/iframe_api.js"></script>
+    <script>
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        var myName = 'Moi';
+
+        function renderLeaderboard(raw) {
+            var list = document.getElementById('leaderboard');
+            if (!list) return;
+
+            var lb = {};
+            try {
+                if (typeof raw === 'string') {
+                    lb = JSON.parse(raw);
+                } else if (raw && typeof raw === 'object') {
+                    lb = raw;
+                }
+            } catch(e) {
+                lb = {};
+            }
+
+            var entries = [];
+            for (var name in lb) {
+                if (lb.hasOwnProperty(name)) {
+                    var entry = lb[name];
+                    var score = (typeof entry === 'object' && entry !== null) ? (entry.score || 0) : (typeof entry === 'number' ? entry : 0);
+                    var time = (typeof entry === 'object' && entry !== null && entry.time) ? entry.time : null;
+                    entries.push({ name: name, score: score, time: time });
+                }
+            }
+
+            // Trier par score décroissant, puis par temps croissant
+            entries.sort(function(a, b) {
+                if (b.score !== a.score) return b.score - a.score;
+                if (a.time && b.time) return a.time - b.time;
+                if (a.time) return -1;
+                if (b.time) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            var rankIcons = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+            var classes = ['gold', 'silver', 'bronze'];
+
+            if (entries.length === 0) {
+                list.innerHTML = '<li class="empty-state">Personne n\'a encore trouv\u00e9 d\'\u0153uf... \u{1F423}</li>';
+                return;
+            }
+
+            list.innerHTML = entries.map(function(p, i) {
+                var rank = rankIcons[i] || ((i + 1) + '.');
+                var cls = classes[i] || '';
+                var isMe = (p.name === myName);
+                if (isMe) cls += ' me';
+                var displayName = isMe ? p.name + ' (toi)' : p.name;
+                var timeStr = '';
+                if (p.time) {
+                    var h = Math.floor(p.time / 3600);
+                    var m = Math.floor((p.time % 3600) / 60);
+                    var s = p.time % 60;
+                    timeStr = h > 0 ? ' \u23F1\uFE0F ' + h + 'h' + ('0'+m).slice(-2) + 'm' : ' \u23F1\uFE0F ' + m + 'm' + ('0'+s).slice(-2) + 's';
+                }
+                return '<li class="' + cls.trim() + '">' +
+                    '<span class="rank">' + rank + '</span>' +
+                    '<span class="player-name">' + escapeHtml(displayName) + '</span>' +
+                    '<span class="score">' + p.score + '/30 \u{1F95A}' + timeStr + '</span>' +
+                    '</li>';
+            }).join('');
+        }
+
+        WA.onInit().then(function() {
+            myName = WA.player.name || 'Moi';
+
+            // Lire le classement partagé depuis WA.state
+            var raw = WA.state.easterLeaderboard;
+            console.info('Leaderboard: initial data', raw);
+            renderLeaderboard(raw);
+
+            // Écouter les mises à jour en temps réel
+            WA.state.onVariableChange('easterLeaderboard').subscribe(function(value) {
+                console.info('Leaderboard: updated', value);
+                renderLeaderboard(value);
+            });
+        }).catch(function(e) {
+            console.error('Leaderboard: init failed', e);
+            document.getElementById('leaderboard').innerHTML =
+                '<li class="empty-state">Erreur de chargement \u{1F61E}</li>';
+        });
+
+        // Bouton Rafraîchir
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            try {
+                var raw = WA.state.easterLeaderboard;
+                renderLeaderboard(raw);
+            } catch(e) {
+                console.warn('Leaderboard: refresh failed', e);
+            }
+        });
+    </script>
 </body>
 </html>
